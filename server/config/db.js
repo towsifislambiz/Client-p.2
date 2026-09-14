@@ -38,6 +38,7 @@ const connectDB = async () => {
     return true;
   } catch (error) {
     cached.promise = null;
+    global.lastDbError = error.message;
     console.error('❌ MongoDB connection failed:', error.message);
     return false;
   }

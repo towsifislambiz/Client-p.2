@@ -125,6 +125,9 @@ app.get(['/api/health', '/health'], (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
+    dbState: mongoose.connection.readyState,
+    dbError: global.lastDbError || null,
+    hasMongoUri: Boolean(process.env.MONGODB_URI),
   });
 });
 
