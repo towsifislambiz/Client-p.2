@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useAdminAuth } from './AdminAuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, User, Eye, EyeOff, ShieldCheck, AlertCircle, Sparkles, Activity } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, ShieldCheck, AlertCircle, Sparkles, Activity, ArrowLeft } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const { login, admin } = useAdminAuth();
@@ -29,6 +29,17 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-[#070A13] flex items-center justify-center p-4 font-sans relative overflow-hidden selection:bg-amber-500/30 selection:text-amber-200">
+      {/* Back to main website button (top-left) */}
+      <div className="absolute top-4 sm:top-6 left-4 sm:left-6 z-20">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0C1120]/90 hover:bg-[#131B30] border border-slate-700/60 hover:border-amber-400/40 text-slate-300 hover:text-amber-400 text-xs font-semibold transition-all shadow-lg backdrop-blur-md group"
+        >
+          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1 text-amber-400" />
+          <span>মূল ওয়েবসাইটে ফিরে যান</span>
+        </Link>
+      </div>
+
       {/* Ambient background glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[550px] h-[550px] bg-gradient-to-tr from-amber-500/10 via-orange-500/5 to-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-20 right-10 w-96 h-96 bg-amber-600/5 rounded-full blur-3xl pointer-events-none" />
@@ -152,6 +163,17 @@ export default function AdminLoginPage() {
               </>
             )}
           </button>
+
+          {/* Back to website button */}
+          <div className="pt-1">
+            <Link
+              to="/"
+              className="w-full py-3 rounded-xl border border-slate-700/80 hover:border-amber-400/50 bg-[#070A13]/80 hover:bg-slate-900 text-slate-300 hover:text-amber-400 text-xs font-semibold tracking-wide transition-all flex items-center justify-center gap-2 group cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1 text-amber-400" />
+              <span>মূল ওয়েবসাইটে ফিরে যান</span>
+            </Link>
+          </div>
         </form>
 
         {/* Footer info */}
