@@ -111,16 +111,15 @@ app.use('/api', (req, res, next) => {
 });
 
 
-// ─── API Routes ───────────────────────────────────────────────────────────────
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/products', require('./routes/products'));
-app.use('/api/orders', require('./routes/orders'));
-app.use('/api/settings', require('./routes/settings'));
-app.use('/api/hero', require('./routes/hero'));
-
+// ─── API Routes (handles both /api/* and direct routes) ────────────────────────
+app.use(['/api/auth', '/auth'], require('./routes/auth'));
+app.use(['/api/products', '/products'], require('./routes/products'));
+app.use(['/api/orders', '/orders'], require('./routes/orders'));
+app.use(['/api/settings', '/settings'], require('./routes/settings'));
+app.use(['/api/hero', '/hero'], require('./routes/hero'));
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.json({
     success: true,
     status: 'ok',
