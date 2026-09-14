@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../api/client';
 import {
   Package,
@@ -12,6 +12,8 @@ import {
   Trash2,
   X,
   Sparkles,
+  UploadCloud,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 export default function AdminProducts() {
@@ -21,6 +23,9 @@ export default function AdminProducts() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const fetchProducts = async () => {
     try {
@@ -68,9 +73,67 @@ export default function AdminProducts() {
     }
   };
 
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      if (!file.type.startsWith('image/')) {
+        return reject(new Error('অনুগ্রহ করে শুধুমাত্র ছবি ফাইল সিলেক্ট করুন (JPG, PNG, WebP)'));
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height = Math.round((height * MAX_SIZE) / width);
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width = Math.round((width * MAX_SIZE) / height);
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          resolve(dataUrl);
+        };
+        img.onerror = () => reject(new Error('ছবি লোড করতে সমস্যা হয়েছে'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('ফাইল পড়তে সমস্যা হয়েছে'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const compressedDataUrl = await compressImage(file);
+      setImagePreview(compressedDataUrl);
+    } catch (err) {
+      alert('ছবি আপলোড ব্যর্থ: ' + err.message);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    const finalImage = (imagePreview || '').trim() || formData.get('image')?.trim() || (editingProduct?.image || '/images/products/red-maroon.png');
     const productPayload = {
       ...(editingProduct || {}),
       name: formData.get('name'),
@@ -80,13 +143,14 @@ export default function AdminProducts() {
       stock: Number(formData.get('stock')) || 10,
       color: formData.get('color') || 'Multi',
       category: formData.get('category') || 'Handloom',
-      image: formData.get('image') || (editingProduct?.image || '/images/products/red-maroon.png'),
+      image: finalImage,
     };
 
     try {
       await api.post('/products', productPayload);
       setEditingProduct(null);
       setIsAddingNew(false);
+      setImagePreview('');
       fetchProducts();
     } catch (err) {
       alert('প্রডাক্ট সেভ ব্যর্থ: ' + err.message);
@@ -139,6 +203,7 @@ export default function AdminProducts() {
             onClick={() => {
               setEditingProduct(null);
               setIsAddingNew(true);
+              setImagePreview('/images/products/red-maroon.png');
             }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
           >
@@ -255,6 +320,7 @@ export default function AdminProducts() {
                     onClick={() => {
                       setEditingProduct(product);
                       setIsAddingNew(false);
+                      setImagePreview(product.image || '/images/products/red-maroon.png');
                     }}
                     title="এডিট করুন"
                     className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
@@ -278,12 +344,13 @@ export default function AdminProducts() {
 
       {/* ─── Modal for Add / Edit Product ─── */}
       {(isAddingNew || editingProduct) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#0C1222] border border-slate-800 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-[#0C1222] border border-slate-800 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => {
                 setIsAddingNew(false);
                 setEditingProduct(null);
+                setImagePreview('');
               }}
               className="absolute top-5 right-5 text-slate-400 hover:text-white"
             >
@@ -361,14 +428,97 @@ export default function AdminProducts() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1">ছবির লিংক (Image URL)</label>
+              {/* ─── Image Upload (PC & Mobile Gallery) ─── */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+                    <span>পণ্যের ছবি (PC ও মোবাইল গ্যালারি)</span>
+                  </label>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
+                    PC ও গ্যালারি সাপোর্টেড
+                  </span>
+                </div>
+
+                {/* Hidden Native File Input for Gallery/PC File Picker */}
                 <input
-                  name="image"
-                  defaultValue={editingProduct?.image || '/images/products/red-maroon.png'}
-                  placeholder="/images/products/red-maroon.png"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
                 />
+
+                {/* Image Preview / Upload Box */}
+                {imagePreview ? (
+                  <div className="p-3 rounded-xl bg-slate-900/90 border border-amber-500/30 flex items-center gap-3.5">
+                    <div className="relative w-18 h-18 rounded-lg overflow-hidden bg-slate-950 border border-slate-700 shrink-0">
+                      <img
+                        src={imagePreview}
+                        alt="Product preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/images/products/red-maroon.png';
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-white truncate mb-1.5 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>ছবি সিলেক্ট করা হয়েছে</span>
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploading}
+                          className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <UploadCloud className="w-3.5 h-3.5" />
+                          <span>{isUploading ? 'প্রসেসিং...' : 'অন্য ছবি দিন'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setImagePreview('')}
+                          className="px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>রিমুভ</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="cursor-pointer border-2 border-dashed border-amber-500/40 hover:border-amber-400 bg-slate-900/60 hover:bg-slate-900 rounded-2xl p-4 sm:p-5 text-center transition-all group"
+                  >
+                    <div className="w-11 h-11 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-2 group-hover:scale-110 transition-transform">
+                      <UploadCloud className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
+                      {isUploading ? 'ছবি প্রসেস হচ্ছে...' : '📁 কম্পিউটার বা ফোন গ্যালারি থেকে ছবি সিলেক্ট করুন'}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      JPG, PNG, WebP ফরম্যাট সাপোর্টেড (ক্লিক করে নির্বাচন করুন)
+                    </p>
+                  </div>
+                )}
+
+                {/* Direct Image URL input fallback */}
+                <div className="pt-1">
+                  <label className="text-[11px] text-slate-400 block mb-1">
+                    অথবা সরাসরি ছবির লিংক (Image URL):
+                  </label>
+                  <input
+                    name="image"
+                    value={imagePreview}
+                    onChange={(e) => setImagePreview(e.target.value)}
+                    placeholder="/images/products/red-maroon.png অথবা https://..."
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/60 font-mono"
+                  />
+                </div>
               </div>
 
               <div className="pt-2 flex justify-end gap-3">
@@ -377,6 +527,7 @@ export default function AdminProducts() {
                   onClick={() => {
                     setIsAddingNew(false);
                     setEditingProduct(null);
+                    setImagePreview('');
                   }}
                   className="px-4 py-2 rounded-xl bg-slate-800 text-xs font-bold text-slate-300"
                 >
@@ -384,7 +535,7 @@ export default function AdminProducts() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/20"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/20 cursor-pointer"
                 >
                   সংরক্ষণ করুন (Save)
                 </button>
