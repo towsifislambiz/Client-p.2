@@ -31,8 +31,8 @@ export default function TrustBar() {
             <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="min-w-0 text-left">
-            <h4 className="font-bold text-[11px] sm:text-xs text-slate-900 leading-tight truncate sm:overflow-visible">৭-ইন-১ গিফট বক্স</h4>
-            <span className="text-[9.5px] sm:text-[11px] text-slate-500 block truncate sm:overflow-visible mt-0.5">উইশ কার্ড সহ রেডি বক্স</span>
+            <h4 className="font-bold text-[11px] sm:text-xs text-slate-900 leading-tight truncate sm:overflow-visible">১১-ইন-১ গিফট বক্স</h4>
+            <span className="text-[9.5px] sm:text-[11px] text-slate-500 block truncate sm:overflow-visible mt-0.5">চিরকুট সহ সম্পূর্ণ রেডি বক্স</span>
           </div>
         </div>
 

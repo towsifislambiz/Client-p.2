@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Package, ShoppingBag, Trash2, CheckCircle2, Lock, RotateCcw, AlertTriangle, Upload, Image as ImageIcon, KeyRound, ShieldAlert, LogOut, Bell } from 'lucide-react';
 import { STORE_CONFIG } from '../data/storeConfig';
+import { COMBO_DESCRIPTION, COMBO_ITEMS_SUMMARY } from '../data/products';
 
 export default function AdminPanelModal({ isOpen, onClose, products, onAddProduct, onDeleteProduct, onResetProducts, onUpdateStock }) {
-  if (!isOpen) return null;
-
   // Authentication State (Default PIN: 1234)
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return sessionStorage.getItem('giftvibes_admin_auth') === 'true';
@@ -36,9 +35,14 @@ export default function AdminPanelModal({ isOpen, onClose, products, onAddProduc
   const [imagePreview, setImagePreview] = useState('');
 
   useEffect(() => {
-    const savedOrders = JSON.parse(localStorage.getItem('giftvibes_store_orders') || '[]');
-    setOrders(savedOrders);
+    if (isOpen) {
+      const savedOrders = JSON.parse(localStorage.getItem('giftvibes_store_orders') || '[]');
+      setOrders(savedOrders);
+    }
   }, [isOpen]);
+
+  if (!isOpen) return null;
+
 
   // Handle Admin PIN Authentication
   const handlePinSubmit = (e) => {
@@ -137,9 +141,9 @@ export default function AdminPanelModal({ isOpen, onClose, products, onAddProduc
       rating: 5.0,
       reviewsCount: 1,
       image: newProd.image || imagePreview || '/images/products/red-maroon.png',
-      description: newProd.description || 'একটি প্রিমিয়াম সফট শাড়ি, ম্যাচিং চুড়ি ও কুন্দন জুয়েলারি গিফট কম্বো।',
-      itemsList: 'শাড়ি • চুড়ি • নেকলেস • দুল • মালা • টিপ • কার্ড',
-      tags: [newProd.name.toLowerCase(), newProd.category.toLowerCase(), 'saree', 'combo', 'gift', 'শাড়ি'],
+      description: newProd.description || COMBO_DESCRIPTION,
+      itemsList: COMBO_ITEMS_SUMMARY,
+      tags: [newProd.name.toLowerCase(), newProd.category.toLowerCase(), 'saree', 'combo', 'gift', 'শাড়ি', 'তাঁতের শাড়ি'],
     };
 
     onAddProduct(created);

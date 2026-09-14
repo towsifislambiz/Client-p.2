@@ -41,7 +41,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart, onBuyWh
             </span>
 
             <span className="bg-amber-950/80 text-amber-200 border border-amber-400/25 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm backdrop-blur-md">
-              ✨ ৭-ইন-১ কম্বো
+              ✨ ১১-ইন-১ কম্বো
             </span>
           </div>
         )}
@@ -83,10 +83,10 @@ export default function ProductCard({ product, onQuickView, onAddToCart, onBuyWh
             {product.banglaName || product.name}
           </h3>
 
-          {/* Included 7-in-1 Items Strip */}
+          {/* Included 11-in-1 Items Strip */}
           <div className="bg-amber-50/50 border border-amber-200/50 rounded-lg px-2.5 py-1 text-[10.5px] text-amber-950 font-medium flex items-center gap-1 truncate">
             <Sparkles className="w-3 h-3 text-amber-600 shrink-0" />
-            <span className="truncate">{product.itemsList || 'শাড়ি • চুড়ি • নেকলেস • দুল • মালা • টিপ • কার্ড'}</span>
+            <span className="truncate">{product.itemsList || 'তাঁতের শাড়ি • চুড়ি • গলার সেট • কানের দুল • টিকলি • গাজরা • কাঠগোলাপ • বো ক্লিপ • টিপ • চিরকুট • গিফ্ট বক্স'}</span>
           </div>
 
           {/* Realtime Stock Indicator Badge */}

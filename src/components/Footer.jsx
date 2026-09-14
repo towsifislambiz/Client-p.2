@@ -1,8 +1,9 @@
 import React from 'react';
 import { ShieldCheck, Truck, MessageSquare, Phone, Mail, Clock, MapPin } from 'lucide-react';
-import { STORE_CONFIG } from '../data/storeConfig';
+import { STORE_CONFIG as STATIC_STORE_CONFIG } from '../data/storeConfig';
 
-export default function Footer() {
+export default function Footer({ storeSettings }) {
+  const STORE_CONFIG = storeSettings || STATIC_STORE_CONFIG;
   return (
     <footer className="bg-slate-900 text-white pt-10 sm:pt-12 pb-8 px-3 sm:px-8 border-t border-slate-800 font-sans">
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">

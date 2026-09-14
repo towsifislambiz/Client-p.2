@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShoppingBag, MessageSquare, Star, Truck, ShieldCheck, Check, Sparkles, Gift, Flame, Ban } from 'lucide-react';
 import { STORE_CONFIG } from '../data/storeConfig';
-import { ALL_COLOR_VARIATIONS } from '../data/products';
+import { ALL_COLOR_VARIATIONS, COMBO_ITEMS } from '../data/products';
 
 export default function ProductModal({ product, onClose, onAddToCart, onBuyWhatsApp }) {
   const [selectedColor, setSelectedColor] = useState(product?.color || 'Red + Maroon');
@@ -136,7 +136,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyWhats
               {/* Product Header & Rating */}
               <div>
                 <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80 inline-flex items-center gap-1">
-                  <Gift className="w-3.5 h-3.5 text-amber-600" /> সম্পূর্ণ ৭-ইন-১ লাক্সারি গিফট কম্বো
+                  <Gift className="w-3.5 h-3.5 text-amber-600" /> সম্পূর্ণ ১১-ইন-১ লাক্সারি গিফট কম্বো
                 </span>
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-2 leading-tight">
                   {product.banglaName || product.name} ({selectedColor})
@@ -184,36 +184,23 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyWhats
                 </div>
               </div>
 
-              {/* Included 7-in-1 Combo Items (Clean 2-Column Grid) */}
-              <div className="bg-amber-50/50 border border-amber-200/80 rounded-2xl p-3.5 space-y-2">
-                <h4 className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" /> কম্বো প্যাকেজে যা যা থাকছে:
-                </h4>
+              {/* Included 11-in-1 Combo Items (Clean 2-Column Grid) */}
+              <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600" /> কম্বো প্যাকেজে যা যা থাকছে (১১টি উপহার):
+                  </h4>
+                  <span className="text-[10px] font-black bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full">
+                    ১১-ইন-১
+                  </span>
+                </div>
                 <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[11px] text-slate-700">
-                  <div className="flex items-center gap-1.5 truncate">
-                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="truncate">প্রিমিয়াম সফট শাড়ি</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 truncate">
-                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="truncate">ম্যাচিং চুড়ির গোছা</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 truncate">
-                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="truncate">কুন্দন নেকলেস ও দুল</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 truncate">
-                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="truncate">সুগন্ধি বেলি ফুলের মালা</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 truncate">
-                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="truncate">স্টোন টিপ ও সাটিন বো</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 truncate">
-                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="truncate">রোমান্টিক উইশ কার্ড</span>
-                  </div>
+                  {COMBO_ITEMS.map((item) => (
+                    <div key={item.id} className="flex items-center gap-1.5 truncate">
+                      <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="truncate">{item.name}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 

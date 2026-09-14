@@ -1,8 +1,9 @@
 import React from 'react';
 import { MessageSquare } from 'lucide-react';
-import { STORE_CONFIG } from '../data/storeConfig';
+import { STORE_CONFIG as STATIC_STORE_CONFIG } from '../data/storeConfig';
 
-export default function FloatingWhatsappButton() {
+export default function FloatingWhatsappButton({ storeSettings }) {
+  const STORE_CONFIG = storeSettings || STATIC_STORE_CONFIG;
   return (
     <a
       href={`https://wa.me/${STORE_CONFIG.whatsappNumber}?text=${encodeURIComponent(`হ্যালো ${STORE_CONFIG.storeName}, আমি সরাসরি হোয়াটসঅ্যাপে সাহায্য চাই।`)}`}

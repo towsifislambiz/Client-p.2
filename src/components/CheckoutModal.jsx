@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2, ShieldCheck, Truck, Send, CreditCard, MessageSquare } from 'lucide-react';
-import { STORE_CONFIG } from '../data/storeConfig';
+import { STORE_CONFIG as STATIC_STORE_CONFIG } from '../data/storeConfig';
+import { trackPurchase } from '../utils/pixel';
 
-export default function CheckoutModal({ isOpen, onClose, cartItems, onCompleteOrder }) {
-  if (!isOpen) return null;
+export default function CheckoutModal({ isOpen, onClose, cartItems, onCompleteOrder, storeSettings }) {
+  const STORE_CONFIG = storeSettings || STATIC_STORE_CONFIG;
 
   const [customer, setCustomer] = useState({
     name: '',
@@ -17,13 +18,16 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onCompleteOr
 
   const [isSuccess, setIsSuccess] = useState(false);
 
+  if (!isOpen) return null;
+
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
   const deliveryFee = customer.district === 'insideDhaka' ? STORE_CONFIG.deliveryCharges.insideDhaka : STORE_CONFIG.deliveryCharges.outsideDhaka;
   const grandTotal = subtotal + deliveryFee;
 
-  const handleOrderSubmit = (e) => {
+
+  const handleOrderSubmit = async (e) => {
     e.preventDefault();
-    
+
     const orderData = {
       id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
       date: new Date().toLocaleString('bn-BD'),
@@ -36,7 +40,44 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onCompleteOr
       grandTotal,
     };
 
-    // Save to LocalStorage order history
+    // ─── POST to backend API (server-side price verification + MongoDB save) ─
+    try {
+      const apiPayload = {
+        customer: {
+          name: customer.name,
+          phone: customer.phone,
+          address: customer.address,
+          district: customer.district,
+          paymentMethod: customer.paymentMethod,
+          trxId: customer.trxId || '',
+        },
+        items: cartItems.map((item) => ({
+          productId: item._id || item.id || null,
+          name: item.name,
+          banglaName: item.banglaName || '',
+          selectedColor: item.selectedColor || item.color || '',
+          price: item.price,
+          quantity: item.quantity || 1,
+          image: item.image || '',
+        })),
+      };
+
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(apiPayload),
+      });
+      const result = await response.json();
+      if (result.success) {
+        orderData.id = result.order.orderId || orderData.id;
+        orderData.grandTotal = result.order.grandTotal || orderData.grandTotal;
+        orderData.deliveryFee = result.order.deliveryFee || orderData.deliveryFee;
+      }
+    } catch (_apiErr) {
+      // API unavailable — continue with localStorage fallback
+    }
+
+    // Save to LocalStorage order history (offline resilience)
     const existingOrders = JSON.parse(localStorage.getItem('giftvibes_store_orders') || '[]');
     localStorage.setItem('giftvibes_store_orders', JSON.stringify([orderData, ...existingOrders]));
 
@@ -48,10 +89,13 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onCompleteOr
       .map((i) => `• ${i.name} ${i.selectedColor ? `(কালার: ${i.selectedColor})` : (i.selectedSize ? `(Size: ${i.selectedSize})` : '')} x${i.quantity || 1} - ৳${(i.price * (i.quantity || 1)).toLocaleString()}`)
       .join('\n');
 
-    const message = `🛍️ *নতুন ইনভয়েস অর্ডার - ${STORE_CONFIG.storeName}*\n\n📋 *অর্ডার আইডি:* #${orderData.id}\n👤 *কাস্টমার নাম:* ${customer.name}\n📱 *ফোন:* ${customer.phone}\n📍 *ঠিকানা:* ${customer.address} (${customer.district === 'insideDhaka' ? 'ঢাকার ভেতরে' : 'ঢাকার বাইরে'})\n\n📦 *পণ্যসমূহ:*\n${itemsList}\n\n💵 *সাবটোটাল:* ৳${subtotal.toLocaleString()} BDT\n🚚 *কুরিয়ার ফি:* ৳${deliveryFee} BDT\n💰 *সর্বমোট:* ৳${grandTotal.toLocaleString()} BDT\n💳 *পেমেন্ট পদ্ধতি:* ${customer.paymentMethod === 'COD' ? 'ক্যাশ অন ডেলিভারি (COD)' : `বিকাশ/নগদ ম্যানুয়াল (TrxID: ${customer.trxId || 'N/A'})`}\n\nদয়া করে অর্ডারটি কনফার্ম করে ডেলিভারি বুকিং জানান।`;
+    const message = `🛍️ *নতুন ইনভয়েস অর্ডার - ${STORE_CONFIG.storeName}*\n\n📋 *অর্ডার আইডি:* #${orderData.id}\n👤 *কাস্টমার নাম:* ${customer.name}\n📱 *ফোন:* ${customer.phone}\n📍 *ঠিকানা:* ${customer.address} (${customer.district === 'insideDhaka' ? 'ঢাকার ভেতরে' : 'ঢাকার বাইরে'})\n\n📦 *পণ্যসমূহ:*\n${itemsList}\n\n💵 *সাবটোটাল:* ৳${subtotal.toLocaleString()} BDT\n🚚 *কুরিয়ার ফি:* ৳${deliveryFee} BDT\n💰 *সর্বমোট:* ৳${orderData.grandTotal.toLocaleString()} BDT\n💳 *পেমেন্ট পদ্ধতি:* ${customer.paymentMethod === 'COD' ? 'ক্যাশ অন ডেলিভারি (COD)' : `বিকাশ/নগদ ম্যানুয়াল (TrxID: ${customer.trxId || 'N/A'})`}\n\nদয়া করে অর্ডারটি কনফার্ম করে ডেলিভারি বুকিং জানান।`;
 
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${STORE_CONFIG.whatsappNumber}?text=${encoded}`, '_blank');
+
+    // Fire Facebook Pixel Purchase Event
+    trackPurchase(orderData);
 
     setIsSuccess(true);
     if (onCompleteOrder) onCompleteOrder(orderData);
