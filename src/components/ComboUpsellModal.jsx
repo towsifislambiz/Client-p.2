@@ -96,7 +96,7 @@ export default function ComboUpsellModal({
           <div className="p-3 sm:p-4 bg-emerald-50/70 border-b border-emerald-100 flex items-center justify-between gap-3 shrink-0">
             <div className="flex items-center gap-2.5 min-w-0">
               <img
-                src={addedProduct?.image || '/images/products/red-maroon.png'}
+                src={addedProduct?.image || '/images/products/red-maroon.webp'}
                 alt="Added product"
                 className="w-12 h-12 rounded-xl object-cover border border-emerald-200 shrink-0"
               />

@@ -85,7 +85,7 @@ export default function AdminPanelModal({ isOpen, onClose, products, onAddProduc
         selectedColor: 'Red + Maroon',
         price: 1350,
         quantity: 1,
-        image: '/images/products/red-maroon.png'
+        image: '/images/products/red-maroon.webp'
       }],
       grandTotal: 1430
     };
@@ -140,7 +140,7 @@ export default function AdminPanelModal({ isOpen, onClose, products, onAddProduc
       discount: newProd.discount || '১৮% অফ',
       rating: 5.0,
       reviewsCount: 1,
-      image: newProd.image || imagePreview || '/images/products/red-maroon.png',
+      image: newProd.image || imagePreview || '/images/products/red-maroon.webp',
       description: newProd.description || COMBO_DESCRIPTION,
       itemsList: COMBO_ITEMS_SUMMARY,
       tags: [newProd.name.toLowerCase(), newProd.category.toLowerCase(), 'saree', 'combo', 'gift', 'শাড়ি', 'তাঁতের শাড়ি'],

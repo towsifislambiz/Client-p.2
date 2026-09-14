@@ -138,7 +138,7 @@ export default function AdminProducts() {
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const finalImage = (imagePreview || '').trim() || formData.get('image')?.trim() || (editingProduct?.image || '/images/products/red-maroon.png');
+    const finalImage = (imagePreview || '').trim() || formData.get('image')?.trim() || (editingProduct?.image || '/images/products/red-maroon.webp');
     const productPayload = {
       ...(editingProduct || {}),
       name: formData.get('name'),
@@ -208,7 +208,7 @@ export default function AdminProducts() {
             onClick={() => {
               setEditingProduct(null);
               setIsAddingNew(true);
-              setImagePreview('/images/products/red-maroon.png');
+              setImagePreview('/images/products/red-maroon.webp');
             }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
           >
@@ -325,7 +325,7 @@ export default function AdminProducts() {
                     onClick={() => {
                       setEditingProduct(product);
                       setIsAddingNew(false);
-                      setImagePreview(product.image || '/images/products/red-maroon.png');
+                      setImagePreview(product.image || '/images/products/red-maroon.webp');
                     }}
                     title="এডিট করুন"
                     className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
@@ -465,7 +465,7 @@ export default function AdminProducts() {
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.src = '/images/products/red-maroon.png';
+                          e.target.src = '/images/products/red-maroon.webp';
                         }}
                       />
                     </div>
@@ -524,7 +524,7 @@ export default function AdminProducts() {
                     name="image"
                     value={imagePreview}
                     onChange={(e) => setImagePreview(e.target.value)}
-                    placeholder="/images/products/red-maroon.png অথবা https://..."
+                    placeholder="/images/products/red-maroon.webp অথবা https://..."
                     className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/60 font-mono"
                   />
                 </div>

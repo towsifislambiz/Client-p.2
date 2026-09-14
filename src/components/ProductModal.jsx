@@ -6,7 +6,7 @@ import { ALL_COLOR_VARIATIONS, COMBO_ITEMS } from '../data/products';
 
 export default function ProductModal({ product, onClose, onAddToCart, onBuyWhatsApp }) {
   const [selectedColor, setSelectedColor] = useState(product?.color || 'Red + Maroon');
-  const [activeImage, setActiveImage] = useState(product?.image || '/images/products/red-maroon.png');
+  const [activeImage, setActiveImage] = useState(product?.image || '/images/products/red-maroon.webp');
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {

@@ -315,7 +315,7 @@ export default function HeroBanner({ onOrderNow, products, heroContent, storeSet
             className="relative mx-auto max-w-sm rounded-3xl overflow-hidden shadow-2xl border-4 border-amber-500/40 group cursor-pointer"
           >
             <img
-              src={selectedColorObj.image || "/images/products/red-maroon.png"}
+              src={selectedColorObj.image || "/images/products/red-maroon.webp"}
               alt="তাঁতে বোনা সুতির শাড়ি কম্বো"
               className="w-full h-[430px] object-cover group-hover:scale-105 transition-transform duration-700"
             />
