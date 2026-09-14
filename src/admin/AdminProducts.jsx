@@ -1,456 +1,398 @@
-import React, { useEffect, useState } from 'react';
-import { api, apiFetch, API_BASE } from '../api/client';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { api } from '../api/client';
 import {
-  Plus, Pencil, Trash2, Package, Search, X, Loader2,
-  CheckCircle2, AlertCircle, ImagePlus, RefreshCw
+  Package,
+  Plus,
+  Minus,
+  Search,
+  CheckCircle2,
+  XCircle,
+  Tag,
+  Edit2,
+  Trash2,
+  X,
+  Sparkles,
 } from 'lucide-react';
-
-const EMPTY_FORM = {
-  name: '',
-  banglaName: '',
-  price: '',
-  originalPrice: '',
-  description: '',
-  itemsList: '',
-  category: 'Combo',
-  color: '',
-  colorCode: '#cc0000',
-  stock: 10,
-  tags: '',
-  imageFile: null,
-  imagePreview: '',
-};
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState(null); // null = create, object = edit
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [updatingId, setUpdatingId] = useState(null);
 
-  const showToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
-  };
-
-  const loadProducts = async () => {
-    setLoading(true);
+  const fetchProducts = async () => {
     try {
-      const data = await api.get('/products');
-      setProducts(data.products || []);
-    } catch (err) {
-      showToast(err.message, 'error');
+      const res = await fetch('/api/site-data');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.products) setProducts(data.products);
+      }
+    } catch (_err) {
+      // fallback
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadProducts();
-    const interval = setInterval(() => {
-      api.get('/products')
-        .then((data) => {
-          if (data?.products) setProducts(data.products);
-        })
-        .catch(() => {});
-    }, 10000);
+    fetchProducts();
+    const interval = setInterval(fetchProducts, 2000);
     return () => clearInterval(interval);
   }, []);
 
-  const openCreate = () => {
-    setEditing(null);
-    setForm(EMPTY_FORM);
-    setShowForm(true);
-  };
-
-  const openEdit = (product) => {
-    setEditing(product);
-    setForm({
-      name: product.name || '',
-      banglaName: product.banglaName || '',
-      price: product.price || '',
-      originalPrice: product.originalPrice || '',
-      description: product.description || '',
-      itemsList: product.itemsList || '',
-      category: product.category || 'Combo',
-      color: product.color || '',
-      colorCode: product.colorCode || '#cc0000',
-      stock: product.stock ?? 10,
-      tags: product.tags?.join(', ') || '',
-      imageFile: null,
-      imagePreview: product.image || '',
-    });
-    setShowForm(true);
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setForm((f) => ({
-        ...f,
-        imageFile: file,
-        imagePreview: URL.createObjectURL(file),
-      }));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSaving(true);
+  const handleStockChange = async (productId, currentStock, delta) => {
+    const newStock = Math.max(0, currentStock + delta);
+    setUpdatingId(productId);
     try {
-      const formData = new FormData();
-      Object.entries(form).forEach(([key, val]) => {
-        if (key === 'imageFile' || key === 'imagePreview') return;
-        formData.append(key, val);
-      });
-      if (form.imageFile) formData.append('image', form.imageFile);
-
-      if (editing) {
-        await apiFetch(`/products/${editing._id}`, { method: 'PUT', body: formData });
-        showToast('পণ্য আপডেট হয়েছে!');
-      } else {
-        await apiFetch('/products', { method: 'POST', body: formData });
-        showToast('নতুন পণ্য যুক্ত হয়েছে!');
-      }
-      setShowForm(false);
-      loadProducts();
+      await api.post('/products/stock', { productId, stock: newStock });
+      fetchProducts();
     } catch (err) {
-      showToast(err.message, 'error');
+      alert('স্টক আপডেট ব্যর্থ: ' + err.message);
     } finally {
-      setSaving(false);
+      setUpdatingId(null);
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleToggleInStock = async (product) => {
+    setUpdatingId(product.id);
+    const newStock = product.inStock ? 0 : (product.stock > 0 ? product.stock : 10);
     try {
-      await api.delete(`/products/${id}`);
-      setProducts((prev) => prev.filter((p) => p._id !== id));
-      showToast('পণ্য মুছে ফেলা হয়েছে।');
-      setDeleteConfirm(null);
+      await api.post('/products/stock', { productId: product.id, stock: newStock });
+      fetchProducts();
     } catch (err) {
-      showToast(err.message, 'error');
+      alert('স্ট্যাটাস পরিবর্তন ব্যর্থ: ' + err.message);
+    } finally {
+      setUpdatingId(null);
     }
   };
 
-  const handleStockUpdate = async (product, newStock) => {
+  const handleSaveProduct = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const productPayload = {
+      ...(editingProduct || {}),
+      name: formData.get('name'),
+      banglaName: formData.get('banglaName'),
+      price: Number(formData.get('price')) || 1350,
+      originalPrice: Number(formData.get('originalPrice')) || 1650,
+      stock: Number(formData.get('stock')) || 10,
+      color: formData.get('color') || 'Multi',
+      category: formData.get('category') || 'Handloom',
+      image: formData.get('image') || (editingProduct?.image || '/images/products/red-maroon.png'),
+    };
+
     try {
-      await api.patch(`/products/${product._id}/stock`, { stock: newStock });
-      setProducts((prev) =>
-        prev.map((p) =>
-          p._id === product._id ? { ...p, stock: Number(newStock), inStock: Number(newStock) > 0 } : p
-        )
-      );
+      await api.post('/products', productPayload);
+      setEditingProduct(null);
+      setIsAddingNew(false);
+      fetchProducts();
     } catch (err) {
-      showToast(err.message, 'error');
+      alert('প্রডাক্ট সেভ ব্যর্থ: ' + err.message);
     }
   };
 
-  const filtered = products.filter((p) =>
-    !search ||
-    p.name?.toLowerCase().includes(search.toLowerCase()) ||
-    p.banglaName?.toLowerCase().includes(search.toLowerCase()) ||
-    p.color?.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleDeleteProduct = async (productId) => {
+    if (!window.confirm('আপনি কি নিশ্চিতভাবে এই প্রডাক্টটি ডিলিট করতে চান?')) return;
+    try {
+      await api.delete(`/products/${productId}`);
+      fetchProducts();
+    } catch (err) {
+      alert('ডিলিট ব্যর্থ: ' + err.message);
+    }
+  };
+
+  const filtered = products.filter((p) => {
+    const q = search.toLowerCase();
+    return (
+      (p.name && p.name.toLowerCase().includes(q)) ||
+      (p.banglaName && p.banglaName.toLowerCase().includes(q)) ||
+      (p.color && p.color.toLowerCase().includes(q))
+    );
+  });
+
+  if (loading && products.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-72">
+        <div className="w-10 h-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-5">
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-sm font-bold ${
-              toast.type === 'error'
-                ? 'bg-red-600 text-white'
-                : 'bg-emerald-600 text-white'
-            }`}
-          >
-            {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-            {toast.msg}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+      {/* ─── Header & Action Bar ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0C1222] p-5 sm:p-6 rounded-2xl border border-slate-800/80 shadow-xl">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">পণ্য ম্যানেজমেন্ট</h1>
-          <p className="text-sm text-slate-500">{products.length}টি পণ্য</p>
+          <div className="flex items-center gap-2 mb-1">
+            <Package className="w-5 h-5 text-amber-400" />
+            <h2 className="text-xl sm:text-2xl font-black text-white">পণ্য ও লাইভ স্টক ম্যানেজার</h2>
+          </div>
+          <p className="text-xs text-slate-400">
+            মোট {products.length}টি শাড়ি কম্বো প্রডাক্ট। স্টক বাড়ানো বা কমালে তা ১-২ সেকেন্ডে কাস্টমারদের সামনে লাইভ আপডেট হয়।
+          </p>
         </div>
+
         <div className="flex items-center gap-3">
-          <button onClick={loadProducts} className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:bg-slate-50 cursor-pointer">
-            <RefreshCw className="w-4 h-4" />
-          </button>
           <button
-            onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl shadow-lg shadow-amber-500/25 cursor-pointer transition-all"
+            onClick={() => {
+              setEditingProduct(null);
+              setIsAddingNew(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            নতুন পণ্য যুক্ত করুন
+            <span>নতুন পণ্য যোগ করুন</span>
           </button>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      {/* ─── Search Bar ─── */}
+      <div className="relative">
+        <Search className="w-4 h-4 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
         <input
           type="text"
-          placeholder="পণ্য সার্চ করুন..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-amber-400"
+          placeholder="নাম বা কালার দিয়ে শাড়ি কম্বো খুঁজুন..."
+          className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#0C1222] border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50"
         />
       </div>
 
-      {/* Products Table */}
-      {loading ? (
-        <div className="flex items-center justify-center h-48">
-          <Loader2 className="w-7 h-7 text-amber-500 animate-spin" />
-        </div>
-      ) : (
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase">ছবি</th>
-                  <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase">নাম</th>
-                  <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase">কালার</th>
-                  <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase">মূল্য</th>
-                  <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase">স্টক</th>
-                  <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase">অ্যাকশন</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filtered.map((product) => (
-                  <tr key={product._id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      {product.image ? (
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-10 h-10 object-cover rounded-lg border border-slate-200"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                          <Package className="w-4 h-4 text-slate-400" />
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="font-bold text-slate-800">{product.banglaName || product.name}</p>
-                      <p className="text-slate-400">{product.name}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="w-4 h-4 rounded-full border border-slate-200 shrink-0"
-                          style={{ background: product.colorCode || '#cc0000' }}
-                        />
-                        <span className="text-slate-600">{product.color}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 font-bold text-slate-900">৳{product.price?.toLocaleString()}</td>
-                    <td className="px-4 py-3">
-                      <input
-                        type="number"
-                        min="0"
-                        value={product.stock ?? 0}
-                        onChange={(e) => handleStockUpdate(product, e.target.value)}
-                        className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-center text-xs font-bold focus:outline-none focus:border-amber-400"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => openEdit(product)}
-                          className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 cursor-pointer"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm(product._id)}
-                          className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="text-center py-12 text-slate-400">
-                      {search ? 'কোনো পণ্য পাওয়া যায়নি।' : 'এখনো কোনো পণ্য নেই।'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {/* ─── Products Grid ─── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        {filtered.map((product) => {
+          const isUpdating = updatingId === product.id;
+          const inStock = Boolean(product.stock > 0 && product.inStock !== false);
 
-      {/* Delete Confirm */}
-      <AnimatePresence>
-        {deleteConfirm && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+          return (
+            <div
+              key={product.id}
+              className={`bg-[#0C1222] border rounded-2xl p-4 transition-all duration-200 flex flex-col justify-between relative group ${
+                inStock
+                  ? 'border-slate-800 hover:border-amber-500/40 shadow-lg shadow-black/20'
+                  : 'border-red-900/40 bg-red-950/10'
+              }`}
             >
-              <h3 className="text-base font-black text-slate-900 mb-2">পণ্য মুছবেন?</h3>
-              <p className="text-sm text-slate-500 mb-5">এই পণ্যটি স্থায়ীভাবে মুছে যাবে।</p>
-              <div className="flex gap-3">
+              <div>
+                {/* Image & Badges */}
+                <div className="relative rounded-xl overflow-hidden aspect-video bg-slate-900 mb-3.5 border border-slate-800/80">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                    <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-amber-300 text-[10px] font-bold border border-amber-500/30">
+                      {product.color || 'শাড়ি কম্বো'}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => handleToggleInStock(product)}
+                    className={`absolute top-2 right-2 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold backdrop-blur-md border cursor-pointer transition-all ${
+                      inStock
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        : 'bg-red-500/20 text-red-300 border-red-500/40'
+                    }`}
+                  >
+                    {inStock ? '● ইন-স্টক' : '✕ স্টক আউট'}
+                  </button>
+                </div>
+
+                {/* Info */}
+                <h3 className="text-sm font-bold text-white line-clamp-1">{product.banglaName || product.name}</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">{product.name}</p>
+
+                {/* Prices */}
+                <div className="flex items-center gap-2 mt-2.5">
+                  <span className="text-base font-black text-amber-400">৳{product.price?.toLocaleString()}</span>
+                  {product.originalPrice && (
+                    <span className="text-xs text-slate-500 line-through">৳{product.originalPrice?.toLocaleString()}</span>
+                  )}
+                  {product.discount && (
+                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300">
+                      {product.discount}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* ─── Real-Time Stock Control Bar ─── */}
+              <div className="mt-4 pt-3.5 border-t border-slate-800/80 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 font-semibold">স্টক:</span>
+                  <span
+                    className={`text-sm font-black px-2 py-0.5 rounded-md ${
+                      product.stock <= 5
+                        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                        : 'bg-slate-800 text-white'
+                    }`}
+                  >
+                    {product.stock || 0} টি
+                  </span>
+                </div>
+
+                {/* Tactile + / - stock buttons */}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleStockChange(product.id, product.stock || 0, -1)}
+                    disabled={isUpdating || (product.stock || 0) <= 0}
+                    className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-sm cursor-pointer disabled:opacity-40 transition-colors"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleStockChange(product.id, product.stock || 0, 1)}
+                    disabled={isUpdating}
+                    className="w-8 h-8 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 flex items-center justify-center font-bold text-sm cursor-pointer disabled:opacity-40 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setEditingProduct(product);
+                      setIsAddingNew(false);
+                    }}
+                    title="এডিট করুন"
+                    className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteProduct(product.id)}
+                    title="ডিলিট করুন"
+                    className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ─── Modal for Add / Edit Product ─── */}
+      {(isAddingNew || editingProduct) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#0C1222] border border-slate-800 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl">
+            <button
+              onClick={() => {
+                setIsAddingNew(false);
+                setEditingProduct(null);
+              }}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-black text-white mb-4">
+              {editingProduct ? 'শাড়ি কম্বো তথ্য এডিট করুন' : 'নতুন শাড়ি কম্বো যোগ করুন'}
+            </h3>
+
+            <form onSubmit={handleSaveProduct} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">বাংলা নাম (স্টোরফ্রন্টে দেখাবে)</label>
+                <input
+                  name="banglaName"
+                  defaultValue={editingProduct?.banglaName || ''}
+                  required
+                  placeholder="যেমন: রক্তিম লাল ও মেরুন তাঁতের শাড়ি কম্বো"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">ইংরেজি নাম</label>
+                <input
+                  name="name"
+                  defaultValue={editingProduct?.name || ''}
+                  required
+                  placeholder="Handloom Cotton Saree Combo - Red + Maroon"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">বিক্রয় মূল্য (৳)</label>
+                  <input
+                    type="number"
+                    name="price"
+                    defaultValue={editingProduct?.price || 1350}
+                    required
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">কাটা মূল্য (Original Price)</label>
+                  <input
+                    type="number"
+                    name="originalPrice"
+                    defaultValue={editingProduct?.originalPrice || 1650}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">স্টক পরিমাণ (Stock)</label>
+                  <input
+                    type="number"
+                    name="stock"
+                    defaultValue={editingProduct?.stock || 10}
+                    required
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">কালার নাম</label>
+                  <input
+                    name="color"
+                    defaultValue={editingProduct?.color || 'Red + Maroon'}
+                    placeholder="Red + Maroon"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">ছবির লিংক (Image URL)</label>
+                <input
+                  name="image"
+                  defaultValue={editingProduct?.image || '/images/products/red-maroon.png'}
+                  placeholder="/images/products/red-maroon.png"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-3">
                 <button
-                  onClick={() => setDeleteConfirm(null)}
-                  className="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold text-sm rounded-xl cursor-pointer"
+                  type="button"
+                  onClick={() => {
+                    setIsAddingNew(false);
+                    setEditingProduct(null);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-xs font-bold text-slate-300"
                 >
                   বাতিল
                 </button>
                 <button
-                  onClick={() => handleDelete(deleteConfirm)}
-                  className="flex-1 py-2.5 bg-red-600 text-white font-bold text-sm rounded-xl cursor-pointer"
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/20"
                 >
-                  মুছে ফেলুন
+                  সংরক্ষণ করুন (Save)
                 </button>
               </div>
-            </motion.div>
+            </form>
           </div>
-        )}
-      </AnimatePresence>
-
-      {/* Create/Edit Form Modal */}
-      <AnimatePresence>
-        {showForm && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, y: 32 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 32 }}
-              className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
-            >
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-                <h2 className="font-black text-slate-900">{editing ? 'পণ্য এডিট করুন' : 'নতুন পণ্য যুক্ত করুন'}</h2>
-                <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="p-6 space-y-4 text-sm">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">পণ্যের নাম (ইংরেজি) *</label>
-                    <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">পণ্যের নাম (বাংলা)</label>
-                    <input value={form.banglaName} onChange={(e) => setForm({ ...form, banglaName: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">মূল্য (৳) *</label>
-                    <input required type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">পূর্বের মূল্য (৳)</label>
-                    <input type="number" min="0" value={form.originalPrice} onChange={(e) => setForm({ ...form, originalPrice: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">কালার</label>
-                    <input value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })}
-                      placeholder="যেমন: Red + Maroon"
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">কালার কোড</label>
-                    <div className="flex gap-2">
-                      <input type="color" value={form.colorCode} onChange={(e) => setForm({ ...form, colorCode: e.target.value })}
-                        className="h-10 w-14 rounded-lg border border-slate-200 cursor-pointer" />
-                      <input value={form.colorCode} onChange={(e) => setForm({ ...form, colorCode: e.target.value })}
-                        className="flex-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">স্টক পরিমাণ</label>
-                    <input type="number" min="0" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">ক্যাটাগরি</label>
-                    <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">বিবরণ</label>
-                  <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400 resize-none" />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">আইটেমস লিস্ট</label>
-                  <textarea rows={2} value={form.itemsList} onChange={(e) => setForm({ ...form, itemsList: e.target.value })}
-                    placeholder="তাঁতের শাড়ি, চুড়ি, গলার সেট..."
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400 resize-none" />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">ট্যাগ (কমা দিয়ে আলাদা করুন)</label>
-                  <input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                    placeholder="saree, combo, gift"
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400" />
-                </div>
-
-                {/* Image Upload */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">পণ্যের ছবি</label>
-                  <div className="flex items-center gap-4">
-                    {form.imagePreview && (
-                      <img src={form.imagePreview} alt="preview"
-                        className="w-20 h-20 object-cover rounded-xl border border-slate-200" />
-                    )}
-                    <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-amber-400 transition-colors text-slate-500 text-sm">
-                      <ImagePlus className="w-4 h-4" />
-                      ছবি আপলোড করুন
-                      <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                    </label>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setShowForm(false)}
-                    className="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl cursor-pointer">
-                    বাতিল
-                  </button>
-                  <button type="submit" disabled={saving}
-                    className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white font-bold rounded-xl cursor-pointer flex items-center justify-center gap-2 transition-all">
-                    {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {editing ? 'আপডেট করুন' : 'পণ্য যুক্ত করুন'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }

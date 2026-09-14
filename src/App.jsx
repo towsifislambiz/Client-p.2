@@ -20,52 +20,9 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { trackAddToCart, trackViewContent, trackInitiateCheckout, trackPurchase } from './utils/pixel';
 
 export default function App() {
-  // ─── Store Settings (fetched from API, falls back to static config) ───────
+  // ─── Store Settings & Live Data (synced in real-time from /api/site-data) ───
   const [storeSettings, setStoreSettings] = useState(STATIC_STORE_CONFIG);
-
-  useEffect(() => {
-    fetch('/api/settings/public')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success && data.settings) {
-          setStoreSettings({
-            ...STATIC_STORE_CONFIG,
-            storeName: data.settings.storeName || STATIC_STORE_CONFIG.storeName,
-            storeTagline: data.settings.storeTagline || STATIC_STORE_CONFIG.storeTagline,
-            whatsappNumber: data.settings.whatsappNumber || STATIC_STORE_CONFIG.whatsappNumber,
-            phone: data.settings.phone || STATIC_STORE_CONFIG.phone,
-            email: data.settings.email || STATIC_STORE_CONFIG.email,
-            address: data.settings.address || STATIC_STORE_CONFIG.address,
-            bkashNumber: data.settings.bkashNumber || STATIC_STORE_CONFIG.bkashNumber,
-            nagadNumber: data.settings.nagadNumber || STATIC_STORE_CONFIG.nagadNumber,
-            deliveryCharges: {
-              insideDhaka: data.settings.deliveryInsideDhaka ?? STATIC_STORE_CONFIG.deliveryCharges.insideDhaka,
-              outsideDhaka: data.settings.deliveryOutsideDhaka ?? STATIC_STORE_CONFIG.deliveryCharges.outsideDhaka,
-            },
-            deliveryTime: data.settings.deliveryTime || STATIC_STORE_CONFIG.deliveryTime,
-          });
-        }
-      })
-      .catch(() => {
-        // Server offline — keep using static config silently
-      });
-  }, []);
-
-  // ─── Hero Content (fetched from API, falls back to defaults) ─────────────
   const [heroContent, setHeroContent] = useState(null);
-
-  useEffect(() => {
-    fetch('/api/hero/public')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success && data.hero) {
-          setHeroContent(data.hero);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  // ─── Products (fetched from API, falls back to localStorage then INITIAL_PRODUCTS) ─
   const [products, setProducts] = useState(() => {
     const saved = localStorage.getItem('giftvibes_store_products_v5');
     if (saved) {
@@ -74,19 +31,51 @@ export default function App() {
     return INITIAL_PRODUCTS;
   });
 
+  // ─── 1.5s Real-Time Live Sync Engine (/api/site-data) ────────────────────────
   useEffect(() => {
-    fetch('/api/products')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success && data.products && data.products.length > 0) {
-          const mapped = data.products.map((p) => ({ ...p, id: p._id || p.id }));
-          setProducts(mapped);
-          localStorage.setItem('giftvibes_store_products_v5', JSON.stringify(mapped));
+    let isMounted = true;
+    let lastUpdated = null;
+
+    const syncSiteData = async () => {
+      try {
+        const res = await fetch('/api/site-data');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!isMounted || !data || !data.success) return;
+
+        if (data.updatedAt !== lastUpdated) {
+          lastUpdated = data.updatedAt;
+
+          if (data.storeSettings) {
+            setStoreSettings({
+              ...STATIC_STORE_CONFIG,
+              ...data.storeSettings,
+              deliveryCharges: {
+                insideDhaka: data.storeSettings.deliveryCharges?.insideDhaka ?? STATIC_STORE_CONFIG.deliveryCharges.insideDhaka,
+                outsideDhaka: data.storeSettings.deliveryCharges?.outsideDhaka ?? STATIC_STORE_CONFIG.deliveryCharges.outsideDhaka,
+              },
+            });
+          }
+          if (data.hero) {
+            setHeroContent((prev) => ({ ...prev, ...data.hero }));
+          }
+          if (Array.isArray(data.products) && data.products.length > 0) {
+            setProducts(data.products);
+            localStorage.setItem('giftvibes_store_products_v5', JSON.stringify(data.products));
+          }
         }
-      })
-      .catch(() => {
-        // Server offline — keep using localStorage/initial products silently
-      });
+      } catch (_err) {
+        // Network offline — silent fallback
+      }
+    };
+
+    syncSiteData();
+    const interval = setInterval(syncSiteData, 1500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   // Save products to LocalStorage whenever modified (offline resilience)

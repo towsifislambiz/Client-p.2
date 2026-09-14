@@ -1,73 +1,48 @@
 import React, { useEffect, useState } from 'react';
-import { api, apiFetch } from '../api/client';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Save, CheckCircle2, AlertCircle, ImagePlus } from 'lucide-react';
+import { api } from '../api/client';
+import { Sparkles, Save, CheckCircle2, Eye } from 'lucide-react';
 
 export default function AdminHero() {
-  const [form, setForm] = useState({
-    badgeText: '',
-    headlineMain: '',
-    headlineSub: '',
-    subHeadline: '',
-    description: '',
-    ctaText: '',
-    ctaSubText: '',
-    desktopImageFile: null,
-    desktopImagePreview: '',
+  const [hero, setHero] = useState({
+    badge: '✨ সম্পূর্ণ ১১-ইন-১ লাক্সারি গিফট কালেকশন',
+    headlineMain: 'তাঁতে বোনা সুতির শাড়ি কম্বো গিফট সেট',
+    headlineSub: 'প্রিয় মানুষের মুখে হাসি ফোটানোর সম্পূর্ণ ১১-ইন-১ রাজকীয় উপহার প্যাকেজ',
+    offerText: 'সীমিত সময়ের জন্য ১৮% বিশেষ মূল্যছাড়!',
+    ctaText: 'পছন্দের কম্বো অর্ডার করুন',
   });
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(null);
-
-  const showToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
-  };
+  const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
-    api.get('/hero')
+    fetch('/api/site-data')
+      .then((r) => r.json())
       .then((data) => {
-        const h = data.hero || {};
-        setForm((f) => ({
-          ...f,
-          badgeText: h.badgeText || '',
-          headlineMain: h.headlineMain || '',
-          headlineSub: h.headlineSub || '',
-          subHeadline: h.subHeadline || '',
-          description: h.description || '',
-          ctaText: h.ctaText || '',
-          ctaSubText: h.ctaSubText || '',
-          desktopImagePreview: h.desktopImage || '',
-        }));
+        if (data.hero) {
+          setHero((prev) => ({ ...prev, ...data.hero }));
+        }
       })
-      .catch((err) => showToast(err.message, 'error'))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setForm((f) => ({
-        ...f,
-        desktopImageFile: file,
-        desktopImagePreview: URL.createObjectURL(file),
-      }));
-    }
+  const handleChange = (field, val) => {
+    setHero((prev) => ({ ...prev, [field]: val }));
+    setSavedSuccess(false);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    try {
-      const formData = new FormData();
-      const fields = ['badgeText', 'headlineMain', 'headlineSub', 'subHeadline', 'description', 'ctaText', 'ctaSubText'];
-      fields.forEach((key) => formData.append(key, form[key]));
-      if (form.desktopImageFile) formData.append('desktopImage', form.desktopImageFile);
+    setSavedSuccess(false);
 
-      await apiFetch('/hero', { method: 'PUT', body: formData });
-      showToast('হিরো কন্টেন্ট সফলভাবে আপডেট হয়েছে!');
+    try {
+      await api.post('/site-data/update', { hero });
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 4000);
     } catch (err) {
-      showToast(err.message, 'error');
+      alert('সেভ ব্যর্থ হয়েছে: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -75,138 +50,127 @@ export default function AdminHero() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-48">
-        <Loader2 className="w-7 h-7 text-amber-500 animate-spin" />
+      <div className="flex items-center justify-center h-72">
+        <div className="w-10 h-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-5 max-w-2xl">
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-sm font-bold ${
-              toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'
-            }`}
-          >
-            {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-            {toast.msg}
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0C1222] p-5 sm:p-6 rounded-2xl border border-slate-800/80 shadow-xl">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="w-5 h-5 text-amber-400" />
+            <h2 className="text-xl sm:text-2xl font-black text-white">হিরো ব্যানার CMS</h2>
+          </div>
+          <p className="text-xs text-slate-400">
+            ওয়েবসাইটের প্রধান টপ ব্যানারের টেক্সট ও অফার কন্টেন্ট এখান থেকে পরিবর্তন করুন।
+          </p>
+        </div>
 
-      <div>
-        <h1 className="text-2xl font-black text-slate-900">হিরো ব্যানার CMS</h1>
-        <p className="text-sm text-slate-500 mt-0.5">ওয়েবসাইটের প্রধান ব্যানারের টেক্সট ও ছবি পরিবর্তন করুন</p>
+        {savedSuccess && (
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>সফলভাবে সেভ হয়েছে ও লাইভ সাইটে প্রযোজ্য!</span>
+          </div>
+        )}
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5">
-        <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">ব্যাজ টেক্সট</label>
-          <input
-            value={form.badgeText}
-            onChange={(e) => setForm({ ...form, badgeText: e.target.value })}
-            className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400"
-            placeholder="✨ সম্পূর্ণ ১১-ইন-১ লাক্সারি গিফট কম্বো"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Form Inputs */}
+        <div className="lg:col-span-2 bg-[#0C1222] border border-slate-800/80 rounded-2xl p-5 sm:p-6 space-y-4 shadow-lg">
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">মূল হেডলাইন (লাইন ১)</label>
+            <label className="text-xs font-bold text-slate-300 block mb-1.5">টপ ব্যাজ টেক্সট</label>
             <input
-              value={form.headlineMain}
-              onChange={(e) => setForm({ ...form, headlineMain: e.target.value })}
-              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400"
-              placeholder="তাঁতে বোনা সুতির শাড়ি"
+              type="text"
+              value={hero.badge}
+              onChange={(e) => handleChange('badge', e.target.value)}
+              placeholder="✨ সম্পূর্ণ ১১-ইন-১ লাক্সারি গিফট কালেকশন"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
             />
           </div>
+
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">হেডলাইন (লাইন ২)</label>
+            <label className="text-xs font-bold text-slate-300 block mb-1.5">প্রধান হেডলাইন (Headline Main)</label>
             <input
-              value={form.headlineSub}
-              onChange={(e) => setForm({ ...form, headlineSub: e.target.value })}
-              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400"
-              placeholder="কম্বো গিফট সেট"
+              type="text"
+              value={hero.headlineMain}
+              onChange={(e) => handleChange('headlineMain', e.target.value)}
+              required
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm font-black text-white focus:outline-none focus:border-amber-500"
             />
           </div>
-        </div>
 
-        <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">সাব-হেডলাইন</label>
-          <input
-            value={form.subHeadline}
-            onChange={(e) => setForm({ ...form, subHeadline: e.target.value })}
-            className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400"
-            placeholder="প্রিয়জনকে সেরা উপহার দিন"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">বিবরণ</label>
-          <textarea
-            rows={3}
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400 resize-none"
-            placeholder="হাতে বোনা খাঁটি তাঁতের শাড়ি সহ ১১টি লাক্সারি আইটেমের পূর্ণ কম্বো সেট।"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">CTA বাটন টেক্সট</label>
-            <input
-              value={form.ctaText}
-              onChange={(e) => setForm({ ...form, ctaText: e.target.value })}
-              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400"
-              placeholder="অর্ডার করতে চাই"
+            <label className="text-xs font-bold text-slate-300 block mb-1.5">সাব-হেডলাইন (Headline Subtitle)</label>
+            <textarea
+              rows={3}
+              value={hero.headlineSub}
+              onChange={(e) => handleChange('headlineSub', e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
             />
           </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">CTA সাব-টেক্সট</label>
-            <input
-              value={form.ctaSubText}
-              onChange={(e) => setForm({ ...form, ctaSubText: e.target.value })}
-              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400"
-              placeholder="কালার সিলেক্ট করে সরাসরি অর্ডার করুন"
-            />
-          </div>
-        </div>
 
-        {/* Desktop Image */}
-        <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">ডেস্কটপ হিরো ছবি (ঐচ্ছিক)</label>
-          <div className="flex items-center gap-4">
-            {form.desktopImagePreview && (
-              <img
-                src={form.desktopImagePreview.startsWith('blob:') ? form.desktopImagePreview : `http://localhost:5000${form.desktopImagePreview}`}
-                alt="Hero preview"
-                className="w-24 h-16 object-cover rounded-xl border border-slate-200"
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold text-slate-300 block mb-1.5">অফার টেক্সট</label>
+              <input
+                type="text"
+                value={hero.offerText}
+                onChange={(e) => handleChange('offerText', e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
               />
-            )}
-            <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-amber-400 transition-colors text-slate-500 text-sm">
-              <ImagePlus className="w-4 h-4" />
-              ছবি আপলোড করুন
-              <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-            </label>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-300 block mb-1.5">বাটন টেক্সট (CTA Button)</label>
+              <input
+                type="text"
+                value={hero.ctaText}
+                onChange={(e) => handleChange('ctaText', e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
+              />
+            </div>
           </div>
-          <p className="text-xs text-slate-400 mt-1.5">সর্বোচ্চ ৫ MB। JPG, PNG, WebP সাপোর্টেড।</p>
         </div>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white font-bold rounded-xl cursor-pointer transition-all shadow-lg shadow-amber-500/25"
-        >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {saving ? 'সেভ হচ্ছে...' : 'পরিবর্তন সেভ করুন'}
-        </button>
+        {/* Live Preview Card */}
+        <div className="space-y-5">
+          <div className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-5 sm:p-6 space-y-4 shadow-lg sticky top-20">
+            <h4 className="text-sm font-black text-white flex items-center gap-2">
+              <Eye className="w-4 h-4 text-amber-400" />
+              <span>ব্যানার প্রিভিউ</span>
+            </h4>
+
+            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2.5 text-xs text-center">
+              <span className="inline-block text-[10px] font-bold text-amber-300 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                {hero.badge}
+              </span>
+              <h5 className="text-base font-black text-white tracking-tight leading-snug">
+                {hero.headlineMain}
+              </h5>
+              <p className="text-[11px] text-slate-400">
+                {hero.headlineSub}
+              </p>
+              <div className="pt-2">
+                <span className="inline-block py-1.5 px-4 rounded-lg bg-amber-500 text-slate-950 font-black text-xs">
+                  {hero.ctaText}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-sm font-black shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            >
+              <Save className={`w-4 h-4 ${saving ? 'animate-spin' : ''}`} />
+              <span>{saving ? 'সেভ হচ্ছে...' : 'ব্যানার সেভ করুন'}</span>
+            </button>
+          </div>
+        </div>
       </form>
     </div>
   );

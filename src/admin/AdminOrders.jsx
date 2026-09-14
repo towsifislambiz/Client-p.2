@@ -1,340 +1,235 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../api/client';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ShoppingBag, Search, Filter, Loader2, RefreshCw,
-  CheckCircle2, AlertCircle, Phone, MapPin, Clock,
-  Truck, XCircle, ChevronLeft, ChevronRight
+  ShoppingBag,
+  Search,
+  MessageCircle,
+  Phone,
+  Clock,
+  CheckCircle2,
+  Truck,
+  XCircle,
+  MapPin,
+  CreditCard,
+  Calendar,
 } from 'lucide-react';
-
-const statusConfig = {
-  pending:   { label: 'পেন্ডিং',    color: 'text-amber-700 bg-amber-50 border-amber-200',    icon: Clock },
-  confirmed: { label: 'কনফার্ম',    color: 'text-blue-700 bg-blue-50 border-blue-200',        icon: CheckCircle2 },
-  shipped:   { label: 'শিপড',       color: 'text-purple-700 bg-purple-50 border-purple-200',  icon: Truck },
-  delivered: { label: 'ডেলিভার্ড', color: 'text-emerald-700 bg-emerald-50 border-emerald-200', icon: CheckCircle2 },
-  cancelled: { label: 'বাতিল',      color: 'text-red-700 bg-red-50 border-red-200',           icon: XCircle },
-};
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({ total: 0, pages: 1 });
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [updatingStatus, setUpdatingStatus] = useState(null);
-  const [toast, setToast] = useState(null);
 
-  const showToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const loadOrders = async () => {
-    setLoading(true);
-    setError('');
+  const fetchOrders = async () => {
     try {
-      const params = new URLSearchParams({ page, limit: 15 });
-      if (statusFilter) params.append('status', statusFilter);
-      const data = await api.get(`/orders?${params}`);
-      setOrders(data.orders || []);
-      setPagination(data.pagination || { total: 0, pages: 1 });
-    } catch (err) {
-      setError(err.message);
+      const res = await fetch('/api/site-data');
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(data.orders || []);
+      }
+    } catch (_err) {
+      // fallback
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadOrders();
-    const interval = setInterval(() => {
-      const params = new URLSearchParams({ page, limit: 15 });
-      if (statusFilter) params.append('status', statusFilter);
-      api.get(`/orders?${params}`)
-        .then((data) => {
-          if (data?.orders) setOrders(data.orders);
-          if (data?.pagination) setPagination(data.pagination);
-        })
-        .catch(() => {});
-    }, 8000);
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 2000);
     return () => clearInterval(interval);
-  }, [page, statusFilter]);
+  }, []);
 
   const handleStatusChange = async (orderId, newStatus) => {
-    setUpdatingStatus(orderId);
     try {
       await api.patch(`/orders/${orderId}/status`, { status: newStatus });
-      setOrders((prev) =>
-        prev.map((o) => (o._id === orderId ? { ...o, status: newStatus } : o))
-      );
-      if (selectedOrder?._id === orderId) {
-        setSelectedOrder((o) => ({ ...o, status: newStatus }));
-      }
-      showToast('স্ট্যাটাস আপডেট হয়েছে।');
+      fetchOrders();
     } catch (err) {
-      showToast(err.message, 'error');
-    } finally {
-      setUpdatingStatus(null);
+      alert('স্ট্যাটাস পরিবর্তন ব্যর্থ: ' + err.message);
     }
   };
 
-  const filtered = orders.filter((o) =>
-    !search ||
-    o.orderId?.toLowerCase().includes(search.toLowerCase()) ||
-    o.customer?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    o.customer?.phone?.includes(search)
-  );
+  const statusConfigs = {
+    pending: { label: 'পেন্ডিং', bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30' },
+    processing: { label: 'প্রসেসিং', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30' },
+    delivered: { label: 'ডেলিভার্ড', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+    cancelled: { label: 'বাতিল', bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/30' },
+  };
+
+  const filtered = orders.filter((o) => {
+    const statusMatch = filter === 'all' || (o.status || 'Pending').toLowerCase() === filter.toLowerCase();
+    const q = search.toLowerCase();
+    const queryMatch =
+      !q ||
+      o.id?.toLowerCase().includes(q) ||
+      o.customer?.name?.toLowerCase().includes(q) ||
+      o.customer?.phone?.includes(q) ||
+      o.customer?.address?.toLowerCase().includes(q);
+    return statusMatch && queryMatch;
+  });
+
+  const pendingCount = orders.filter((o) => (o.status || 'Pending').toLowerCase() === 'pending').length;
 
   return (
-    <div className="space-y-5">
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-sm font-bold ${
-              toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'
-            }`}
-          >
-            {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-            {toast.msg}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+      {/* ─── Header ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0C1222] p-5 sm:p-6 rounded-2xl border border-slate-800/80 shadow-xl">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">অর্ডার ম্যানেজমেন্ট</h1>
-          <p className="text-sm text-slate-500">মোট {pagination.total}টি অর্ডার</p>
-        </div>
-        <button onClick={loadOrders} className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:bg-slate-50 cursor-pointer">
-          <RefreshCw className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="অর্ডার ID, নাম বা ফোন..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-amber-400"
-          />
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-amber-400 cursor-pointer"
-        >
-          <option value="">সব স্ট্যাটাস</option>
-          {Object.entries(statusConfig).map(([k, v]) => (
-            <option key={k} value={k}>{v.label}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Orders Table */}
-      {loading ? (
-        <div className="flex items-center justify-center h-48">
-          <Loader2 className="w-7 h-7 text-amber-500 animate-spin" />
-        </div>
-      ) : error ? (
-        <div className="text-center py-12 text-red-500">{error}</div>
-      ) : (
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase">অর্ডার ID</th>
-                  <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase">কাস্টমার</th>
-                  <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase">মোট</th>
-                  <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase">পেমেন্ট</th>
-                  <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase">স্ট্যাটাস</th>
-                  <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase">তারিখ</th>
-                  <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase">বিস্তারিত</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filtered.map((order) => {
-                  const cfg = statusConfig[order.status] || statusConfig.pending;
-                  return (
-                    <tr key={order._id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 font-mono font-bold text-slate-700">{order.orderId}</td>
-                      <td className="px-4 py-3">
-                        <p className="font-bold text-slate-800">{order.customer?.name}</p>
-                        <p className="text-slate-400">{order.customer?.phone}</p>
-                      </td>
-                      <td className="px-4 py-3 font-bold text-slate-900">৳{order.grandTotal?.toLocaleString()}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold border ${
-                          order.customer?.paymentMethod === 'BKASH'
-                            ? 'text-pink-700 bg-pink-50 border-pink-200'
-                            : 'text-slate-600 bg-slate-50 border-slate-200'
-                        }`}>
-                          {order.customer?.paymentMethod === 'BKASH' ? 'বিকাশ' : 'COD'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={order.status}
-                          onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                          disabled={updatingStatus === order._id}
-                          className={`text-[10px] font-bold border rounded-full px-2 py-1 cursor-pointer focus:outline-none ${cfg.color}`}
-                        >
-                          {Object.entries(statusConfig).map(([k, v]) => (
-                            <option key={k} value={k}>{v.label}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3 text-slate-400">
-                        {new Date(order.createdAt).toLocaleDateString('bn-BD')}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => setSelectedOrder(order)}
-                          className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-[10px] font-bold cursor-pointer hover:bg-amber-100"
-                        >
-                          দেখুন
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="text-center py-12 text-slate-400">কোনো অর্ডার নেই।</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="flex items-center gap-2 mb-1">
+            <ShoppingBag className="w-5 h-5 text-amber-400" />
+            <h2 className="text-xl sm:text-2xl font-black text-white">রিয়েল-টাইম অর্ডার ট্র্যাকার</h2>
           </div>
+          <p className="text-xs text-slate-400">
+            মোট {orders.length}টি অর্ডার রেকর্ড করা হয়েছে। নতুন অর্ডার প্লেস হলে ১-২ সেকেন্ডে এই তালিকায় যোগ হবে।
+          </p>
+        </div>
 
-          {/* Pagination */}
-          {pagination.pages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
-              <p className="text-xs text-slate-500">পেজ {page} / {pagination.pages}</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 cursor-pointer"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}
-                  disabled={page === pagination.pages}
-                  className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 cursor-pointer"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+        {/* Status Filter Tabs */}
+        <div className="flex flex-wrap gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+          {[
+            { key: 'all', label: 'সব অর্ডার', count: orders.length },
+            { key: 'pending', label: 'পেন্ডিং', count: pendingCount },
+            { key: 'processing', label: 'প্রসেসিং' },
+            { key: 'delivered', label: 'ডেলিভার্ড' },
+            { key: 'cancelled', label: 'বাতিল' },
+          ].map(({ key, label, count }) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                filter === key
+                  ? 'bg-amber-500 text-slate-950 shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              {label} {typeof count === 'number' && `(${count})`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── Search Bar ─── */}
+      <div className="relative">
+        <Search className="w-4 h-4 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="অর্ডার আইডি, কাস্টমার নাম, বা ফোন নম্বর দিয়ে সার্চ করুন..."
+          className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#0C1222] border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50"
+        />
+      </div>
+
+      {/* ─── Orders List ─── */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 bg-[#0C1222] rounded-2xl border border-dashed border-slate-800">
+          <ShoppingBag className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+          <p className="text-sm font-bold text-slate-300">কোনো অর্ডার পাওয়া যায়নি</p>
+          <p className="text-xs text-slate-500 mt-1">কাস্টমার সাইট থেকে অর্ডার করলে এখানে সাথে সাথে দেখা যাবে</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filtered.map((order) => {
+            const currentStatus = (order.status || 'Pending').toLowerCase();
+            const config = statusConfigs[currentStatus] || statusConfigs.pending;
+
+            return (
+              <div
+                key={order.id}
+                className="bg-[#0C1222] border border-slate-800 hover:border-slate-700 rounded-2xl p-5 sm:p-6 transition-all shadow-lg"
+              >
+                {/* Top bar of order card */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-black text-amber-400 bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20">
+                      #{order.id}
+                    </span>
+                    <span className="text-xs text-slate-400 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {order.date}
+                    </span>
+                  </div>
+
+                  {/* Status Dropdown */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-slate-400 font-semibold">স্ট্যাটাস:</span>
+                    <select
+                      value={order.status || 'Pending'}
+                      onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                      className={`text-xs font-extrabold px-3 py-1.5 rounded-xl border bg-[#090D16] cursor-pointer focus:outline-none ${config.bg} ${config.text} ${config.border}`}
+                    >
+                      <option value="Pending">পেন্ডিং (Pending)</option>
+                      <option value="Processing">প্রসেসিং (Processing)</option>
+                      <option value="Delivered">ডেলিভার্ড (Delivered)</option>
+                      <option value="Cancelled">বাতিল (Cancelled)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Body: Customer & Items */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4">
+                  {/* Customer Info */}
+                  <div className="space-y-1.5 text-xs">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">গ্রাহকের তথ্য</span>
+                    <p className="text-sm font-bold text-white">{order.customer?.name}</p>
+                    <p className="text-slate-300 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-amber-400" />
+                      <a href={`tel:${order.customer?.phone}`} className="hover:underline">{order.customer?.phone}</a>
+                    </p>
+                    <p className="text-slate-400 flex items-start gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
+                      <span>{order.customer?.address} ({order.customer?.district === 'insideDhaka' ? 'ঢাকার ভেতরে' : 'ঢাকার বাইরে'})</span>
+                    </p>
+                  </div>
+
+                  {/* Products ordered */}
+                  <div className="space-y-2 text-xs md:col-span-1">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">অর্ডারের পণ্যসমূহ</span>
+                    <div className="space-y-1.5">
+                      {(order.items || []).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-slate-300">
+                          <span>
+                            • {item.banglaName || item.name} {item.selectedColor ? `(${item.selectedColor})` : ''} x{item.quantity || 1}
+                          </span>
+                          <span className="font-bold text-white">৳{((item.price || 0) * (item.quantity || 1)).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Payment & Action */}
+                  <div className="space-y-2 text-xs flex flex-col justify-between border-t md:border-t-0 md:border-l border-slate-800 md:pl-5 pt-3 md:pt-0">
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">পেমেন্ট ও সর্বমোট</span>
+                      <p className="text-lg font-black text-emerald-400 mt-1">
+                        ৳{(Number(order.grandTotal) || 0).toLocaleString()}
+                      </p>
+                      <p className="text-[11px] text-slate-400">
+                        কুরিয়ার ফি: ৳{order.deliveryFee || 0} | পদ্ধতি: {order.customer?.paymentMethod === 'COD' ? 'Cash on Delivery' : `bKash (TrxID: ${order.customer?.trxId || 'N/A'})`}
+                      </p>
+                    </div>
+
+                    {/* WhatsApp Customer direct button */}
+                    {order.customer?.phone && (
+                      <a
+                        href={`https://wa.me/88${order.customer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                          `হ্যালো ${order.customer.name}, Gift Vibes থেকে আপনার অর্ডার #${order.id} (৳${order.grandTotal}) সংক্রান্ত বিষয়ে যোগাযোগ করছি। ডেলিভারি লোকেশন কনফার্ম করবেন কি?`
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-colors"
+                      >
+                        <MessageCircle className="w-4 h-4 text-emerald-400" />
+                        <span>গ্রাহককে WhatsApp-এ মেসেজ দিন</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })}
         </div>
       )}
-
-      {/* Order Detail Modal */}
-      <AnimatePresence>
-        {selectedOrder && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl"
-            >
-              <div className="flex items-center justify-between px-6 py-4 border-b">
-                <div>
-                  <h2 className="font-black text-slate-900">অর্ডার বিস্তারিত</h2>
-                  <p className="text-xs text-slate-500 font-mono mt-0.5">{selectedOrder.orderId}</p>
-                </div>
-                <button onClick={() => setSelectedOrder(null)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
-                  <XCircle className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="p-6 space-y-5 text-sm">
-                {/* Customer */}
-                <div className="bg-slate-50 rounded-xl p-4 space-y-2">
-                  <h3 className="text-xs font-black text-slate-500 uppercase">কাস্টমার তথ্য</h3>
-                  <p className="font-bold text-slate-900">{selectedOrder.customer?.name}</p>
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>{selectedOrder.customer?.phone}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>{selectedOrder.customer?.address} ({selectedOrder.customer?.district === 'insideDhaka' ? 'ঢাকার ভেতরে' : 'ঢাকার বাইরে'})</span>
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    পেমেন্ট: {selectedOrder.customer?.paymentMethod === 'BKASH' ? `বিকাশ (TrxID: ${selectedOrder.customer?.trxId || 'N/A'})` : 'ক্যাশ অন ডেলিভারি'}
-                  </p>
-                </div>
-
-                {/* Items */}
-                <div>
-                  <h3 className="text-xs font-black text-slate-500 uppercase mb-3">পণ্যসমূহ</h3>
-                  <div className="space-y-2">
-                    {selectedOrder.items?.map((item, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                        <div>
-                          <p className="font-bold text-slate-800">{item.banglaName || item.name}</p>
-                          {item.selectedColor && <p className="text-xs text-slate-400">কালার: {item.selectedColor}</p>}
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-slate-900">৳{(item.price * item.quantity).toLocaleString()}</p>
-                          <p className="text-xs text-slate-400">x{item.quantity} × ৳{item.price?.toLocaleString()}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Totals */}
-                <div className="border-t pt-4 space-y-2 font-mono text-xs">
-                  <div className="flex justify-between text-slate-600">
-                    <span>সাবটোটাল</span>
-                    <span>৳{selectedOrder.subtotal?.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600">
-                    <span>ডেলিভারি ফি</span>
-                    <span>৳{selectedOrder.deliveryFee}</span>
-                  </div>
-                  <div className="flex justify-between font-black text-base text-slate-900">
-                    <span>সর্বমোট</span>
-                    <span className="text-amber-600">৳{selectedOrder.grandTotal?.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                {/* Status Update */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-2">স্ট্যাটাস পরিবর্তন করুন</label>
-                  <select
-                    value={selectedOrder.status}
-                    onChange={(e) => handleStatusChange(selectedOrder._id, e.target.value)}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400 cursor-pointer"
-                  >
-                    {Object.entries(statusConfig).map(([k, v]) => (
-                      <option key={k} value={k}>{v.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

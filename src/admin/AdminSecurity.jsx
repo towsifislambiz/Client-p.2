@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../api/client';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Shield, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Key } from 'lucide-react';
 
 export default function AdminSecurity() {
   const [form, setForm] = useState({
@@ -23,22 +22,22 @@ export default function AdminSecurity() {
     e.preventDefault();
 
     if (form.newPassword !== form.confirmPassword) {
-      showToast('নতুন পাসওয়ার্ড দুটো মিলছে না।', 'error');
+      showToast('নতুন পাসওয়ার্ড দুটি মিলছে না।', 'error');
       return;
     }
 
-    if (form.newPassword.length < 8) {
-      showToast('নতুন পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।', 'error');
+    if (form.newPassword.length < 6) {
+      showToast('নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।', 'error');
       return;
     }
 
     setSaving(true);
     try {
-      await api.post('/auth/change-password', {
+      await api.post('/auth/password', {
         currentPassword: form.currentPassword,
         newPassword: form.newPassword,
       });
-      showToast('পাসওয়ার্ড সফলভাবে পরিবর্তিত হয়েছে!');
+      showToast('পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে!');
       setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err) {
       showToast(err.message, 'error');
@@ -47,122 +46,101 @@ export default function AdminSecurity() {
     }
   };
 
-  const PasswordField = ({ label, name, show, onToggle, placeholder }) => (
-    <div>
-      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">{label}</label>
-      <div className="relative">
-        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input
-          type={show ? 'text' : 'password'}
-          required
-          value={form[name]}
-          onChange={(e) => setForm({ ...form, [name]: e.target.value })}
-          placeholder={placeholder}
-          className="w-full pl-10 pr-11 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-400 transition-colors"
-        />
-        <button
-          type="button"
-          onClick={onToggle}
-          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
-        >
-          {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-        </button>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="space-y-5 max-w-lg">
+    <div className="space-y-6 sm:space-y-8 max-w-xl animate-in fade-in duration-300">
       {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-sm font-bold ${
-              toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'
-            }`}
-          >
-            {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-            {toast.msg}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div>
-        <h1 className="text-2xl font-black text-slate-900">সিকিউরিটি</h1>
-        <p className="text-sm text-slate-500 mt-0.5">অ্যাডমিন পাসওয়ার্ড পরিবর্তন করুন</p>
-      </div>
-
-      {/* Info Card */}
-      <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
-        <Shield className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-bold text-amber-800">নিরাপদ পাসওয়ার্ড ব্যবহার করুন</p>
-          <p className="text-xs text-amber-700 mt-1">
-            পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে। বড় হাতের অক্ষর, ছোট হাতের অক্ষর, সংখ্যা ও বিশেষ চিহ্ন ব্যবহার করুন।
-          </p>
+      {toast && (
+        <div
+          className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl text-xs font-bold ${
+            toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'
+          }`}
+        >
+          {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+          {toast.msg}
         </div>
+      )}
+
+      {/* Header */}
+      <div className="bg-[#0C1222] p-5 sm:p-6 rounded-2xl border border-slate-800/80 shadow-xl">
+        <div className="flex items-center gap-2 mb-1">
+          <Shield className="w-5 h-5 text-amber-400" />
+          <h2 className="text-xl sm:text-2xl font-black text-white">অ্যাডমিন সিকিউরিটি</h2>
+        </div>
+        <p className="text-xs text-slate-400">
+          আপনার অ্যাডমিন একাউন্টের পাসওয়ার্ড সুরক্ষিত রাখুন ও প্রয়োজনে পরিবর্তন করুন।
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
-        <PasswordField
-          label="বর্তমান পাসওয়ার্ড"
-          name="currentPassword"
-          show={showCurrent}
-          onToggle={() => setShowCurrent(!showCurrent)}
-          placeholder="আপনার বর্তমান পাসওয়ার্ড"
-        />
+      {/* Security Form */}
+      <form onSubmit={handleSubmit} className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-6 space-y-4 shadow-xl">
+        <div>
+          <label className="block text-xs font-bold text-slate-300 mb-1.5">বর্তমান পাসওয়ার্ড</label>
+          <div className="relative">
+            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input
+              type={showCurrent ? 'text' : 'password'}
+              required
+              value={form.currentPassword}
+              onChange={(e) => setForm({ ...form, currentPassword: e.target.value })}
+              placeholder="বর্তমান পাসওয়ার্ড দিন"
+              className="w-full pl-10 pr-11 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
+            />
+            <button
+              type="button"
+              onClick={() => setShowCurrent(!showCurrent)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+            >
+              {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
 
-        <div className="border-t border-slate-100 pt-4 space-y-4">
-          <PasswordField
-            label="নতুন পাসওয়ার্ড"
-            name="newPassword"
-            show={showNew}
-            onToggle={() => setShowNew(!showNew)}
-            placeholder="কমপক্ষে ৮ অক্ষর"
-          />
+        <div className="border-t border-slate-800/80 pt-4 space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-300 mb-1.5">নতুন পাসওয়ার্ড</label>
+            <div className="relative">
+              <Key className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                type={showNew ? 'text' : 'password'}
+                required
+                value={form.newPassword}
+                onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
+                placeholder="কমপক্ষে ৬ অক্ষর"
+                className="w-full pl-10 pr-11 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNew(!showNew)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+              >
+                {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
+            <label className="block text-xs font-bold text-slate-300 mb-1.5">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Key className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
               <input
                 type="password"
                 required
                 value={form.confirmPassword}
                 onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                placeholder="পাসওয়ার্ড আবার লিখুন"
-                className={`w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:outline-none transition-colors ${
-                  form.confirmPassword && form.confirmPassword !== form.newPassword
-                    ? 'border-red-400 bg-red-50 focus:border-red-400'
-                    : 'border-slate-200 focus:border-amber-400'
-                }`}
+                placeholder="নতুন পাসওয়ার্ডটি আবার লিখুন"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
               />
             </div>
-            {form.confirmPassword && form.confirmPassword !== form.newPassword && (
-              <p className="text-xs text-red-500 mt-1">পাসওয়ার্ড মিলছে না</p>
-            )}
           </div>
         </div>
 
         <button
           type="submit"
-          disabled={saving || (form.confirmPassword && form.confirmPassword !== form.newPassword)}
-          className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-xl cursor-pointer transition-all shadow-lg shadow-amber-500/25 mt-2"
+          disabled={saving}
+          className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 mt-2"
         >
-          {saving ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              পরিবর্তন হচ্ছে...
-            </>
-          ) : (
-            <>
-              <Shield className="w-4 h-4" />
-              পাসওয়ার্ড পরিবর্তন করুন
-            </>
-          )}
+          <Shield className="w-4 h-4" />
+          <span>{saving ? 'আপডেট হচ্ছে...' : 'পাসওয়ার্ড পরিবর্তন করুন'}</span>
         </button>
       </form>
     </div>
