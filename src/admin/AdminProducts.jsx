@@ -76,7 +76,7 @@ export default function AdminProducts() {
   const compressImage = (file) => {
     return new Promise((resolve, reject) => {
       if (!file.type.startsWith('image/')) {
-        return reject(new Error('অনুগ্রহ করে শুধুমাত্র ছবি ফাইল সিলেক্ট করুন (JPG, PNG, WebP)'));
+        return reject(new Error('অনুগ্রহ করে ছবি ফাইল সিলেক্ট করুন (PNG, JPG, JPEG, WebP ইত্যাদি)'));
       }
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -104,7 +104,12 @@ export default function AdminProducts() {
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
 
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          // Always convert to WebP format
+          let dataUrl = canvas.toDataURL('image/webp', 0.85);
+          // Fallback if browser doesn't support WebP canvas encoding
+          if (!dataUrl.startsWith('data:image/webp')) {
+            dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          }
           resolve(dataUrl);
         };
         img.onerror = () => reject(new Error('ছবি লোড করতে সমস্যা হয়েছে'));
@@ -435,8 +440,9 @@ export default function AdminProducts() {
                     <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
                     <span>পণ্যের ছবি (PC ও মোবাইল গ্যালারি)</span>
                   </label>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
-                    PC ও গ্যালারি সাপোর্টেড
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-bold flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-amber-400" />
+                    <span>স্বয়ংক্রিয় WebP কনভার্টার</span>
                   </span>
                 </div>
 
@@ -464,9 +470,12 @@ export default function AdminProducts() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-white truncate mb-1.5 flex items-center gap-1">
+                      <p className="text-xs font-bold text-white truncate mb-1 flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                         <span>ছবি সিলেক্ট করা হয়েছে</span>
+                      </p>
+                      <p className="text-[10px] text-amber-400/90 font-medium mb-1.5">
+                        {imagePreview.startsWith('data:image/webp') ? '⚡ WebP ফরম্যাটে রূপান্তর সম্পন্ন' : '✓ লাইভ ইমেজ'}
                       </p>
                       <div className="flex flex-wrap items-center gap-2">
                         <button
@@ -476,7 +485,7 @@ export default function AdminProducts() {
                           className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                         >
                           <UploadCloud className="w-3.5 h-3.5" />
-                          <span>{isUploading ? 'প্রসেসিং...' : 'অন্য ছবি দিন'}</span>
+                          <span>{isUploading ? 'WebP তে রূপান্তর হচ্ছে...' : 'অন্য ছবি দিন'}</span>
                         </button>
                         <button
                           type="button"
@@ -498,10 +507,10 @@ export default function AdminProducts() {
                       <UploadCloud className="w-5 h-5" />
                     </div>
                     <p className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
-                      {isUploading ? 'ছবি প্রসেস হচ্ছে...' : '📁 কম্পিউটার বা ফোন গ্যালারি থেকে ছবি সিলেক্ট করুন'}
+                      {isUploading ? 'WebP তে রূপান্তর হচ্ছে...' : '📁 যে কোনো ছবি সিলেক্ট করুন (স্বয়ংক্রিয় WebP হবে)'}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      JPG, PNG, WebP ফরম্যাট সাপোর্টেড (ক্লিক করে নির্বাচন করুন)
+                      PNG, JPG, JPEG, GIF সব ছবি মুহূর্তেই হালকা ও হাই-কোয়ালিটি WebP তে কনভার্ট হবে
                     </p>
                   </div>
                 )}
