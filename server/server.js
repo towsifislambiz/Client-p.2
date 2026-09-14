@@ -82,7 +82,7 @@ app.use('/images', express.static(path.join(__dirname, '../public/images')));
 const mongoose = require('mongoose');
 
 // ─── DB Auto-Connect Middleware for Serverless ────────────────────────────────
-app.use('/api', async (req, res, next) => {
+app.use(async (req, res, next) => {
   try {
     await connectDB();
   } catch (_err) {
