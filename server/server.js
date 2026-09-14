@@ -11,9 +11,7 @@ const connectDB = require('./config/db');
 const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET'];
 const missing = requiredEnvVars.filter((v) => !process.env[v]);
 if (missing.length > 0) {
-  console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
-  console.error('Please copy server/.env.example to server/.env and fill in your values.');
-  process.exit(1);
+  console.warn(`⚠️ Warning: Missing required environment variables: ${missing.join(', ')}`);
 }
 
 // Connect to MongoDB
@@ -39,10 +37,16 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, Postman)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      callback(new Error(`CORS blocked: ${origin}`));
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.includes('vercel.app') ||
+        origin.includes('localhost') ||
+        origin.includes('loca.lt')
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -131,10 +135,14 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ─── Start Server ─────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Gift Vibes Server running on http://localhost:${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`💡 Health check: http://localhost:${PORT}/api/health`);
-});
+// ─── Start Server (standalone / local mode) ───────────────────────────────────
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Gift Vibes Server running on http://localhost:${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`💡 Health check: http://localhost:${PORT}/api/health`);
+  });
+}
+
+module.exports = app;
