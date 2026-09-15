@@ -20,10 +20,20 @@ export const apiFetch = async (endpoint, options = {}) => {
     headers,
   });
 
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch (_) {
+    data = {};
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || `HTTP ${response.status}`);
+    const error = new Error(data.message || `HTTP ${response.status}`);
+    error.status = response.status;
+    if (response.status === 401 && !endpoint.includes('/auth/login')) {
+      window.dispatchEvent(new CustomEvent('giftvibes_auth_unauthorized'));
+    }
+    throw error;
   }
 
   return data;

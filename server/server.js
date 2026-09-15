@@ -216,7 +216,7 @@ app.post(['/api/auth/login', '/auth/login'], authLimiter, async (req, res) => {
   const token = jwt.sign(
     { username: admin.username, role: admin.role || 'admin' },
     JWT_SECRET,
-    { expiresIn: '30d' }
+    { expiresIn: '3d' }
   );
 
   res.json({
