@@ -13,6 +13,7 @@ import {
   RefreshCw,
   UploadCloud,
   Image as ImageIcon,
+  Mail,
 } from 'lucide-react';
 
 export default function AdminSettings() {
@@ -310,6 +311,21 @@ export default function AdminSettings() {
               </div>
             </div>
 
+            <div>
+              <label className="text-xs font-bold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-amber-400" />
+                <span>অফিসিয়াল ইমেইল অ্যাড্রেস (Email Address)</span>
+              </label>
+              <input
+                type="email"
+                value={settings.email || ''}
+                onChange={(e) => handleChange('email', e.target.value)}
+                placeholder="rabbanimeheraj03@gmail.com"
+                required
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
+              />
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-slate-300 block mb-1.5">বিকাশ পেমেন্ট নম্বর</label>
@@ -369,6 +385,11 @@ export default function AdminSettings() {
               <div className="pt-2 border-t border-slate-900">
                 <span className="text-[10px] text-slate-500 block">হোয়াটসঅ্যাপ ও ফোন</span>
                 <span className="text-xs font-bold text-emerald-400">{settings.whatsappNumber}</span>
+              </div>
+
+              <div className="pt-2 border-t border-slate-900">
+                <span className="text-[10px] text-slate-500 block">অফিসিয়াল ইমেইল</span>
+                <span className="text-xs font-bold text-amber-400 truncate block">{settings.email}</span>
               </div>
             </div>
 
