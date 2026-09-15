@@ -79,7 +79,7 @@ export default function Navbar({ cartCount, onOpenCart, onOpenAdmin, searchQuery
             title="এডমিন ড্যাশবোর্ড"
           >
             <Settings className="w-4 h-4 text-slate-600" />
-            <span className="inline">ড্যাশবোর্ড</span>
+            <span className="hidden min-[400px]:inline">ড্যাশবোর্ড</span>
           </Link>
 
           {/* WhatsApp Direct Chat */}

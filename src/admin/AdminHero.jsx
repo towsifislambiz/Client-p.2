@@ -134,20 +134,33 @@ export default function AdminHero() {
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0C1222] p-5 sm:p-6 rounded-2xl border border-slate-800/80 shadow-xl">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="w-5 h-5 text-amber-400" />
-            <h2 className="text-xl sm:text-2xl font-black text-white">হিরো ব্যানার CMS ও ইমেজ ম্যানেজার</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-[#0C1222] p-4 sm:p-6 rounded-2xl border border-slate-800/80 shadow-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+              <h2 className="text-xl sm:text-2xl font-black text-white">হিরো ব্যানার CMS</h2>
+            </div>
+            <p className="text-xs text-slate-400">
+              প্রধান টপ ব্যানারের ছবি, টেক্সট ও অফার পরিবর্তন করুন।
+            </p>
           </div>
-          <p className="text-xs text-slate-400">
-            ওয়েবসাইটের প্রধান টপ ব্যানারের ছবি, টেক্সট ও অফার কন্টেন্ট এখান থেকে পরিবর্তন করুন।
-          </p>
+
+          {/* Quick Header Save Button on Mobile */}
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="sm:hidden flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 active:scale-95 disabled:opacity-50 shrink-0 ml-2"
+          >
+            <Save className={`w-3.5 h-3.5 ${saving ? 'animate-spin' : ''}`} />
+            <span>{saving ? '...' : 'সেভ করুন'}</span>
+          </button>
         </div>
 
         {savedSuccess && (
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>সফলভাবে সেভ হয়েছে ও লাইভ সাইটে প্রতিফলিত হয়েছে!</span>
           </div>
         )}
@@ -338,6 +351,18 @@ export default function AdminHero() {
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
               />
             </div>
+          </div>
+
+          {/* Mobile direct submit button below inputs */}
+          <div className="lg:hidden pt-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-sm font-black shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 active:scale-98"
+            >
+              <Save className={`w-4 h-4 ${saving ? 'animate-spin' : ''}`} />
+              <span>{saving ? 'সেভ হচ্ছে...' : 'পরিবর্তন লাইভ সেভ করুন'}</span>
+            </button>
           </div>
         </div>
 

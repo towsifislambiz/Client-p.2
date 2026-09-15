@@ -102,8 +102,8 @@ export default function AdminOrders() {
           </p>
         </div>
 
-        {/* Status Filter Tabs */}
-        <div className="flex flex-wrap gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+        {/* Status Filter Tabs (Scrollable on mobile) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 px-1 bg-slate-900/90 rounded-xl border border-slate-800 w-full sm:w-auto">
           {[
             { key: 'all', label: 'সব অর্ডার', count: orders.length },
             { key: 'pending', label: 'পেন্ডিং', count: pendingCount },
@@ -114,7 +114,7 @@ export default function AdminOrders() {
             <button
               key={key}
               onClick={() => setFilter(key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
                 filter === key
                   ? 'bg-amber-500 text-slate-950 shadow-md'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -154,23 +154,22 @@ export default function AdminOrders() {
             return (
               <div
                 key={order.id}
-                className="bg-[#0C1222] border border-slate-800 hover:border-slate-700 rounded-2xl p-5 sm:p-6 transition-all shadow-lg"
+                className="bg-[#0C1222] border border-slate-800 hover:border-slate-700 rounded-2xl p-4 sm:p-6 transition-all shadow-lg"
               >
                 {/* Top bar of order card */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-black text-amber-400 bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20">
+                <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3.5 border-b border-slate-800/80">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs sm:text-sm font-black text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
                       #{order.id}
                     </span>
-                    <span className="text-xs text-slate-400 flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
+                    <span className="text-[11px] sm:text-xs text-slate-400 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-slate-500" />
                       {order.date}
                     </span>
                   </div>
 
                   {/* Status Dropdown & Delete Button */}
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs text-slate-400 font-semibold">স্ট্যাটাস:</span>
+                  <div className="flex items-center gap-2">
                     <select
                       value={order.status || 'Pending'}
                       onChange={(e) => handleStatusChange(order.id, e.target.value)}
@@ -186,7 +185,7 @@ export default function AdminOrders() {
                       type="button"
                       onClick={() => handleDeleteOrder(order.id)}
                       title="এই অর্ডার রেকর্ড মুছে ফেলুন"
-                      className="p-1.5 rounded-xl bg-slate-900 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 border border-slate-800 hover:border-rose-500/30 transition-all cursor-pointer"
+                      className="p-2 rounded-xl bg-slate-900 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 border border-slate-800 hover:border-rose-500/30 transition-all cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -194,7 +193,7 @@ export default function AdminOrders() {
                 </div>
 
                 {/* Body: Customer & Items */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3.5">
                   {/* Customer Info */}
                   <div className="space-y-1.5 text-xs">
                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">গ্রাহকের তথ্য</span>
@@ -203,7 +202,7 @@ export default function AdminOrders() {
                       <Phone className="w-3.5 h-3.5 text-amber-400" />
                       <a href={`tel:${order.customer?.phone}`} className="hover:underline">{order.customer?.phone}</a>
                     </p>
-                    <p className="text-slate-400 flex items-start gap-1.5">
+                    <p className="text-slate-400 flex items-start gap-1.5 leading-relaxed">
                       <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
                       <span>{order.customer?.address} ({order.customer?.district === 'insideDhaka' ? 'ঢাকার ভেতরে' : 'ঢাকার বাইরে'})</span>
                     </p>
@@ -215,40 +214,49 @@ export default function AdminOrders() {
                     <div className="space-y-1.5">
                       {(order.items || []).map((item, idx) => (
                         <div key={idx} className="flex items-center justify-between text-slate-300">
-                          <span>
+                          <span className="truncate max-w-[200px]">
                             • {item.banglaName || item.name} {item.selectedColor ? `(${item.selectedColor})` : ''} x{item.quantity || 1}
                           </span>
-                          <span className="font-bold text-white">৳{((item.price || 0) * (item.quantity || 1)).toLocaleString()}</span>
+                          <span className="font-bold text-white ml-1">৳{((item.price || 0) * (item.quantity || 1)).toLocaleString()}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Payment & Action */}
-                  <div className="space-y-2 text-xs flex flex-col justify-between border-t md:border-t-0 md:border-l border-slate-800 md:pl-5 pt-3 md:pt-0">
+                  <div className="space-y-3 text-xs flex flex-col justify-between border-t md:border-t-0 md:border-l border-slate-800 md:pl-5 pt-3 md:pt-0">
                     <div>
                       <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">পেমেন্ট ও সর্বমোট</span>
-                      <p className="text-lg font-black text-emerald-400 mt-1">
+                      <p className="text-lg sm:text-xl font-black text-emerald-400 mt-0.5">
                         ৳{(Number(order.grandTotal) || 0).toLocaleString()}
                       </p>
-                      <p className="text-[11px] text-slate-400">
-                        কুরিয়ার ফি: ৳{order.deliveryFee || 0} | পদ্ধতি: {order.customer?.paymentMethod === 'COD' ? 'Cash on Delivery' : `bKash (TrxID: ${order.customer?.trxId || 'N/A'})`}
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        কুরিয়ার ফি: ৳{order.deliveryFee || 0} • {order.customer?.paymentMethod === 'COD' ? 'Cash on Delivery' : `bKash (${order.customer?.trxId || 'N/A'})`}
                       </p>
                     </div>
 
-                    {/* WhatsApp Customer direct button */}
+                    {/* Quick Call & WhatsApp Action Buttons */}
                     {order.customer?.phone && (
-                      <a
-                        href={`https://wa.me/88${order.customer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                          `হ্যালো ${order.customer.name}, Gift Vibes থেকে আপনার অর্ডার #${order.id} (৳${order.grandTotal}) সংক্রান্ত বিষয়ে যোগাযোগ করছি। ডেলিভারি লোকেশন কনফার্ম করবেন কি?`
-                        )}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-colors"
-                      >
-                        <MessageCircle className="w-4 h-4 text-emerald-400" />
-                        <span>গ্রাহককে WhatsApp-এ মেসেজ দিন</span>
-                      </a>
+                      <div className="grid grid-cols-2 gap-2">
+                        <a
+                          href={`tel:${order.customer.phone}`}
+                          className="py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                        >
+                          <Phone className="w-3.5 h-3.5 text-amber-400" />
+                          <span>কল করুন</span>
+                        </a>
+                        <a
+                          href={`https://wa.me/88${order.customer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                            `হ্যালো ${order.customer.name}, Gift Vibes থেকে আপনার অর্ডার #${order.id} (৳${order.grandTotal}) সংক্রান্ত বিষয়ে যোগাযোগ করছি। ডেলিভারি লোকেশন কনফার্ম করবেন কি?`
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="py-2 px-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>WhatsApp</span>
+                        </a>
+                      </div>
                     )}
                   </div>
                 </div>

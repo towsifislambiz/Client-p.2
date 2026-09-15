@@ -489,18 +489,18 @@ export default function AdminProducts() {
                       onClick={() => handleStockChangeDelta(product.id, product.stock || 0, -1)}
                       disabled={isUpdating || (product.stock || 0) <= 0}
                       title="১টি কমান"
-                      className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs cursor-pointer disabled:opacity-30 transition-all active:scale-90"
+                      className="w-8 h-8 sm:w-7 sm:h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs cursor-pointer disabled:opacity-30 transition-all active:scale-90"
                     >
-                      <Minus className="w-3 h-3" />
+                      <Minus className="w-3.5 h-3.5" />
                     </button>
                     <button
                       type="button"
                       onClick={() => handleStockChangeDelta(product.id, product.stock || 0, 1)}
                       disabled={isUpdating}
                       title="১টি বাড়ান"
-                      className="w-7 h-7 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 flex items-center justify-center font-bold text-xs cursor-pointer disabled:opacity-30 transition-all active:scale-90"
+                      className="w-8 h-8 sm:w-7 sm:h-7 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 flex items-center justify-center font-bold text-xs cursor-pointer disabled:opacity-30 transition-all active:scale-90"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-3.5 h-3.5" />
                     </button>
 
                     <button
@@ -511,31 +511,31 @@ export default function AdminProducts() {
                         setImagePreview(product.image || '/images/products/red-maroon.webp');
                       }}
                       title="সম্পূর্ণ তথ্য এডিট করুন"
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ml-1"
+                      className="p-2 sm:p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ml-0.5"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
+                      <Edit2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleDeleteProduct(product.id)}
                       title="পণ্য ডিলিট করুন"
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="p-2 sm:p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                     </button>
                   </div>
                 </div>
 
                 {/* Fast One-Tap Stock Presets (+5, +10, Stock Out) */}
-                <div className="flex items-center justify-between gap-1 pt-1 border-t border-slate-800/40 text-[10px]">
+                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-1 pt-1.5 border-t border-slate-800/40 text-[10px]">
                   <span className="text-slate-500 font-medium">কুইক স্টক:</span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => handleStockChangeDelta(product.id, product.stock || 0, 5)}
                       disabled={isUpdating}
-                      className="px-2 py-0.5 rounded bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold border border-slate-700/60 transition-all cursor-pointer active:scale-95"
+                      className="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold border border-slate-700/60 transition-all cursor-pointer active:scale-95"
                     >
                       +৫ টি
                     </button>
@@ -543,7 +543,7 @@ export default function AdminProducts() {
                       type="button"
                       onClick={() => handleStockChangeDelta(product.id, product.stock || 0, 10)}
                       disabled={isUpdating}
-                      className="px-2 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold border border-amber-500/25 transition-all cursor-pointer active:scale-95"
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold border border-amber-500/25 transition-all cursor-pointer active:scale-95"
                     >
                       +১০ টি
                     </button>
@@ -551,7 +551,7 @@ export default function AdminProducts() {
                       type="button"
                       onClick={() => handleUpdateStockDirect(product.id, 0)}
                       disabled={isUpdating || (product.stock || 0) === 0}
-                      className="px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 font-bold border border-rose-500/25 transition-all cursor-pointer disabled:opacity-30 active:scale-95"
+                      className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 font-bold border border-rose-500/25 transition-all cursor-pointer disabled:opacity-30 active:scale-95"
                     >
                       ০ (স্টক শেষ)
                     </button>
@@ -565,33 +565,34 @@ export default function AdminProducts() {
 
       {/* ─── Modal for Add / Edit Product (Full Field Capabilities) ─── */}
       {(isAddingNew || editingProduct) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-          <div className="bg-[#0C1222] border border-slate-700/80 rounded-2xl w-full max-w-2xl p-5 sm:p-7 relative shadow-2xl my-auto max-h-[92vh] overflow-y-auto">
-            <button
-              type="button"
-              onClick={() => {
-                setIsAddingNew(false);
-                setEditingProduct(null);
-                setImagePreview('');
-              }}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center justify-between mb-5 pr-8">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md overflow-hidden">
+          <div className="bg-[#0C1222] border border-slate-700/80 rounded-t-3xl sm:rounded-2xl w-full max-w-2xl relative shadow-2xl flex flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden">
+            {/* Sticky Header */}
+            <div className="p-4 sm:p-6 border-b border-slate-800 flex items-center justify-between shrink-0 bg-[#0C1222]/98 backdrop-blur-md z-10">
               <div>
-                <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+                <h3 className="text-base sm:text-xl font-black text-white flex items-center gap-2">
                   <Edit2 className="w-4 h-4 text-amber-400" />
-                  <span>{editingProduct ? 'শাড়ি কম্বো তথ্য সম্পাদনা (Edit Product)' : 'নতুন শাড়ি কম্বো যোগ করুন (Add Product)'}</span>
+                  <span>{editingProduct ? 'শাড়ি কম্বো তথ্য সম্পাদনা' : 'নতুন শাড়ি কম্বো যোগ'}</span>
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  পণ্যটির বিবরণ, মূল্য, স্টক ও ছবি পরিবর্তন করে সরাসরি স্টোরফ্রন্টে লাইভ করুন।
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  পণ্যটির বিবরণ, মূল্য, স্টক ও ছবি লাইভ সেট করুন
                 </p>
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAddingNew(false);
+                  setEditingProduct(null);
+                  setImagePreview('');
+                }}
+                className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 cursor-pointer transition-colors"
+                title="বন্ধ করুন"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveProduct} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs">
               {/* Bangla & English Name */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
@@ -873,8 +874,8 @@ export default function AdminProducts() {
                 </div>
               </div>
 
-              {/* Submit Buttons */}
-              <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-800">
+              {/* Sticky Submit Buttons Footer */}
+              <div className="sticky bottom-0 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 p-3.5 sm:p-5 bg-[#0C1222]/98 backdrop-blur-md border-t border-slate-800 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 z-20">
                 <button
                   type="button"
                   onClick={() => {
@@ -882,13 +883,13 @@ export default function AdminProducts() {
                     setEditingProduct(null);
                     setImagePreview('');
                   }}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition-colors cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold transition-colors cursor-pointer text-center"
                 >
                   বাতিল
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-95 flex items-center gap-1.5"
+                  className="w-full sm:w-auto px-6 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>সংরক্ষণ ও লাইভ আপডেট (Save)</span>

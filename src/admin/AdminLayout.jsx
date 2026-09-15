@@ -193,43 +193,122 @@ export default function AdminLayout() {
       {/* ─── Main Content Container ─── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 bg-[#0C1120]/80 backdrop-blur-md border-b border-slate-800/70 px-4 sm:px-8 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-30 bg-[#0C1120]/90 backdrop-blur-md border-b border-slate-800/70 px-3.5 sm:px-8 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60"
+              className="lg:hidden p-2 rounded-xl text-slate-300 hover:text-white bg-slate-900/80 border border-slate-800 hover:bg-slate-800 transition-colors"
+              aria-label="Open navigation menu"
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="hidden sm:flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-400" />
-              <span className="text-xs font-bold text-slate-300">Gift Vibes Luxury Storefront Manager</span>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 sm:hidden rounded-lg bg-gradient-to-tr from-amber-600 to-amber-300 p-0.5">
+                <div className="w-full h-full bg-[#0C1120] rounded-[6px] flex items-center justify-center">
+                  <span className="text-[11px] font-black text-amber-400">GV</span>
+                </div>
+              </div>
+              <span className="text-xs sm:text-sm font-black text-white tracking-wide">Gift Vibes</span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                Admin
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-[11px] text-slate-300">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/90 border border-slate-800 text-[10px] sm:text-[11px] text-slate-300">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>রিয়েল-টাইম লাইভ সিঙ্ক সক্রিয় (১-২ সেকেন্ড)</span>
+              <span className="hidden xs:inline sm:inline">লাইভ সিঙ্ক</span>
             </div>
 
             <a
               href="/"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition-colors"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all shadow-sm"
+              title="ওয়েবসাইট দেখুন"
             >
-              <span>ওয়েবসাইট দেখুন</span>
-              <ExternalLink className="w-3 h-3" />
+              <span className="hidden xs:inline">ওয়েবসাইট</span>
+              <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
         </header>
 
         {/* Page Body */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 lg:pb-8">
           <Outlet />
         </main>
       </div>
+
+      {/* ─── Sleek Native-Feel Mobile Bottom Navigation Bar (< lg) ─── */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0C1120]/95 backdrop-blur-xl border-t border-slate-800/90 py-1.5 px-2 flex items-center justify-around shadow-2xl safe-area-bottom">
+        <NavLink
+          to="/admin/dashboard"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+              isActive ? 'text-amber-400 font-black' : 'text-slate-400 hover:text-slate-200'
+            }`
+          }
+        >
+          <LayoutDashboard className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px] tracking-tight">ড্যাশবোর্ড</span>
+        </NavLink>
+
+        <NavLink
+          to="/admin/products"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all relative ${
+              isActive ? 'text-amber-400 font-black' : 'text-slate-400 hover:text-slate-200'
+            }`
+          }
+        >
+          <div className="relative">
+            <Package className="w-5 h-5 mb-0.5" />
+            {productCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 text-[9px] font-black bg-amber-500 text-slate-950 rounded-full px-1 py-0.2 leading-none">
+                {toBengaliNumber(productCount)}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] tracking-tight">পণ্য ও স্টক</span>
+        </NavLink>
+
+        <NavLink
+          to="/admin/orders"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all relative ${
+              isActive ? 'text-amber-400 font-black' : 'text-slate-400 hover:text-slate-200'
+            }`
+          }
+        >
+          <div className="relative">
+            <ShoppingBag className="w-5 h-5 mb-0.5" />
+            <span className="absolute -top-1.5 -right-1.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          </div>
+          <span className="text-[10px] tracking-tight">অর্ডার</span>
+        </NavLink>
+
+        <NavLink
+          to="/admin/settings"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+              isActive ? 'text-amber-400 font-black' : 'text-slate-400 hover:text-slate-200'
+            }`
+          }
+        >
+          <Settings className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px] tracking-tight">সেটিংস</span>
+        </NavLink>
+
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-slate-400 hover:text-slate-200 transition-all cursor-pointer"
+        >
+          <Menu className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px] tracking-tight">মেনু</span>
+        </button>
+      </nav>
     </div>
   );
 }

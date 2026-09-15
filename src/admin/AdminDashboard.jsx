@@ -112,11 +112,11 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
       {/* ─── Top Welcome & Real-Time Sync Bar ─── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900/90 via-[#0E1528] to-slate-900/90 p-5 sm:p-7 rounded-2xl border border-slate-800/80 shadow-xl relative overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900/90 via-[#0E1528] to-slate-900/90 p-4 sm:p-7 rounded-2xl border border-slate-800/80 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
             <span className="text-xs font-bold text-amber-400 uppercase tracking-widest bg-amber-500/10 px-2.5 py-0.5 rounded-md border border-amber-500/20">
               রিয়েল-টাইম সেন্ট্রাল ড্যাশবোর্ড
             </span>
@@ -125,7 +125,7 @@ export default function AdminDashboard() {
               ১-২ সে. লাইভ সিঙ্ক
             </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+          <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight">
             স্বাগতম, {admin?.username || 'অ্যাডমিন'}! 👑
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
@@ -133,21 +133,21 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 relative z-10">
+        <div className="flex items-center gap-2.5 relative z-10 w-full sm:w-auto">
           <button
             onClick={() => {
               setIsRefreshing(true);
               fetchLiveSiteData();
             }}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-750 text-xs font-bold text-slate-200 border border-slate-700 hover:border-amber-500/40 transition-all cursor-pointer"
+            className="flex-1 sm:flex-none justify-center flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-750 text-xs font-bold text-slate-200 border border-slate-700 hover:border-amber-500/40 transition-all cursor-pointer active:scale-95"
           >
             <RefreshCw className={`w-4 h-4 text-amber-400 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span>রিফ্রেশ</span>
           </button>
           <Link
             to="/admin/products"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition-all"
+            className="flex-1 sm:flex-none justify-center flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition-all active:scale-95"
           >
             <span>পণ্য ও স্টক</span>
             <ArrowRight className="w-4 h-4" />
@@ -156,18 +156,18 @@ export default function AdminDashboard() {
       </div>
 
       {/* ─── 5 Metric Cards Grid (including 5K Product Limit) ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-5">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-4 lg:gap-5">
         {/* Total Products (5K Catalog Limit) */}
-        <div className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-5 hover:border-amber-500/40 transition-all duration-300 shadow-lg relative group">
+        <div className="col-span-2 sm:col-span-1 bg-[#0C1222] border border-slate-800/80 rounded-2xl p-4 sm:p-5 hover:border-amber-500/40 transition-all duration-300 shadow-lg relative group">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">মোট পণ্য (5K প্যাকেজ)</span>
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-              <Package className="w-5 h-5" />
+            <span className="text-[11px] sm:text-xs font-bold text-slate-400">মোট পণ্য (5K প্যাকেজ)</span>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+              <Package className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-2.5 sm:mt-3">
             <div className="flex items-baseline gap-1.5">
-              <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              <h3 className="text-xl sm:text-3xl font-black text-white tracking-tight">
                 {toBengaliNumber(products.length)}
               </h3>
               <span className="text-xs font-bold text-slate-400">/ ৫০টি</span>
@@ -185,73 +185,73 @@ export default function AdminDashboard() {
         </div>
 
         {/* Total Revenue */}
-        <div className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-5 hover:border-emerald-500/40 transition-all duration-300 shadow-lg relative group">
+        <div className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-3.5 sm:p-5 hover:border-emerald-500/40 transition-all duration-300 shadow-lg relative group">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">সর্বমোট বিক্রয় (Revenue)</span>
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
-              <Banknote className="w-5 h-5" />
+            <span className="text-[11px] sm:text-xs font-bold text-slate-400">সর্বমোট বিক্রয়</span>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+              <Banknote className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+          <div className="mt-2 sm:mt-3">
+            <h3 className="text-lg sm:text-3xl font-black text-white tracking-tight truncate">
               ৳{totalRevenue.toLocaleString()}
             </h3>
-            <p className="text-[11px] text-emerald-400 font-semibold mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5" /> মোট {orders.length}টি অর্ডার থেকে
+            <p className="text-[10px] sm:text-[11px] text-emerald-400 font-semibold mt-1 flex items-center gap-1 truncate">
+              <TrendingUp className="w-3 h-3 shrink-0" /> {orders.length}টি অর্ডার থেকে
             </p>
           </div>
         </div>
 
         {/* Total Orders */}
-        <div className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-5 hover:border-amber-500/40 transition-all duration-300 shadow-lg relative group">
+        <div className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-3.5 sm:p-5 hover:border-amber-500/40 transition-all duration-300 shadow-lg relative group">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">মোট কাস্টমার অর্ডার</span>
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-              <ShoppingBag className="w-5 h-5" />
+            <span className="text-[11px] sm:text-xs font-bold text-slate-400">মোট অর্ডার</span>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+          <div className="mt-2 sm:mt-3">
+            <h3 className="text-lg sm:text-3xl font-black text-white tracking-tight">
               {orders.length}
             </h3>
-            <p className="text-[11px] text-amber-400 font-semibold mt-1">
-              সরাসরি ডাটাবেজ থেকে লাইভ ট্র্যাক
+            <p className="text-[10px] sm:text-[11px] text-amber-400 font-semibold mt-1">
+              লাইভ ট্র্যাক
             </p>
           </div>
         </div>
 
         {/* Pending Orders */}
-        <div className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-5 hover:border-blue-500/40 transition-all duration-300 shadow-lg relative group">
+        <div className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-3.5 sm:p-5 hover:border-blue-500/40 transition-all duration-300 shadow-lg relative group">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">পেন্ডিং অর্ডার (Pending)</span>
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
-              <Clock className="w-5 h-5" />
+            <span className="text-[11px] sm:text-xs font-bold text-slate-400">পেন্ডিং অর্ডার</span>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+          <div className="mt-2 sm:mt-3">
+            <h3 className="text-lg sm:text-3xl font-black text-white tracking-tight">
               {pendingCount}
             </h3>
-            <p className="text-[11px] text-blue-400 font-semibold mt-1">
-              ডেলিভারির জন্য অপেক্ষায়
+            <p className="text-[10px] sm:text-[11px] text-blue-400 font-semibold mt-1">
+              অপেক্ষমাণ
             </p>
           </div>
         </div>
 
         {/* Delivered Orders */}
-        <div className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-5 hover:border-purple-500/40 transition-all duration-300 shadow-lg relative group">
+        <div className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-3.5 sm:p-5 hover:border-purple-500/40 transition-all duration-300 shadow-lg relative group">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">সফল ডেলিভারি (Delivered)</span>
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-              <CheckCircle2 className="w-5 h-5" />
+            <span className="text-[11px] sm:text-xs font-bold text-slate-400">ডেলিভার্ড</span>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+          <div className="mt-2 sm:mt-3">
+            <h3 className="text-lg sm:text-3xl font-black text-white tracking-tight">
               {deliveredCount}
             </h3>
-            <p className="text-[11px] text-purple-400 font-semibold mt-1">
-              সফলভাবে কাস্টমার গ্রহণ করেছে
+            <p className="text-[10px] sm:text-[11px] text-purple-400 font-semibold mt-1">
+              সফল ডেলিভারি
             </p>
           </div>
         </div>
@@ -324,98 +324,194 @@ export default function AdminDashboard() {
             <p className="text-xs text-slate-500 mt-1">কাস্টমার সাইট থেকে অর্ডার করলে এখানে সাথে সাথে ভেসে উঠবে</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="text-[11px] text-slate-400 uppercase bg-slate-900/80 border-b border-slate-800">
-                <tr>
-                  <th className="py-3 px-3">অর্ডার আইডি ও তারিখ</th>
-                  <th className="py-3 px-3">গ্রাহক তথ্য</th>
-                  <th className="py-3 px-3">পণ্যসমূহ</th>
-                  <th className="py-3 px-3">মোট মূল্য</th>
-                  <th className="py-3 px-3">স্ট্যাটাস</th>
-                  <th className="py-3 px-3 text-right">অ্যাকশন</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {orders.slice(0, 5).map((order) => {
-                  const statusColors = {
-                    pending: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-                    processing: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-                    delivered: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-                    cancelled: 'bg-red-500/10 text-red-400 border-red-500/20',
-                  };
-                  const currentStatus = (order.status || 'pending').toLowerCase();
+          <>
+            {/* Desktop / Tablet Table View (>= md) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="text-[11px] text-slate-400 uppercase bg-slate-900/80 border-b border-slate-800">
+                  <tr>
+                    <th className="py-3 px-3">অর্ডার আইডি ও তারিখ</th>
+                    <th className="py-3 px-3">গ্রাহক তথ্য</th>
+                    <th className="py-3 px-3">পণ্যসমূহ</th>
+                    <th className="py-3 px-3">মোট মূল্য</th>
+                    <th className="py-3 px-3">স্ট্যাটাস</th>
+                    <th className="py-3 px-3 text-right">অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {orders.slice(0, 5).map((order) => {
+                    const statusColors = {
+                      pending: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                      processing: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                      delivered: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                      cancelled: 'bg-red-500/10 text-red-400 border-red-500/20',
+                    };
+                    const currentStatus = (order.status || 'pending').toLowerCase();
 
-                  return (
-                    <tr key={order.id} className="hover:bg-slate-900/40 transition-colors">
-                      <td className="py-3.5 px-3">
-                        <span className="font-extrabold text-amber-400 block">{order.id}</span>
-                        <span className="text-[10px] text-slate-500">{order.date}</span>
-                      </td>
+                    return (
+                      <tr key={order.id} className="hover:bg-slate-900/40 transition-colors">
+                        <td className="py-3.5 px-3">
+                          <span className="font-extrabold text-amber-400 block">{order.id}</span>
+                          <span className="text-[10px] text-slate-500">{order.date}</span>
+                        </td>
 
-                      <td className="py-3.5 px-3">
-                        <span className="font-bold text-white block">{order.customer?.name}</span>
-                        <span className="text-slate-400 block">{order.customer?.phone}</span>
-                        <span className="text-[10px] text-slate-500 block truncate max-w-[160px]">
-                          {order.customer?.address}
-                        </span>
-                      </td>
+                        <td className="py-3.5 px-3">
+                          <span className="font-bold text-white block">{order.customer?.name}</span>
+                          <span className="text-slate-400 block">{order.customer?.phone}</span>
+                          <span className="text-[10px] text-slate-500 block truncate max-w-[160px]">
+                            {order.customer?.address}
+                          </span>
+                        </td>
 
-                      <td className="py-3.5 px-3">
-                        <div className="space-y-1">
-                          {(order.items || []).map((item, idx) => (
-                            <span key={idx} className="block text-slate-300 font-medium">
-                              • {item.banglaName || item.name} {item.selectedColor ? `(${item.selectedColor})` : ''} x{item.quantity || 1}
-                            </span>
-                          ))}
+                        <td className="py-3.5 px-3">
+                          <div className="space-y-1">
+                            {(order.items || []).map((item, idx) => (
+                              <span key={idx} className="block text-slate-300 font-medium">
+                                • {item.banglaName || item.name} {item.selectedColor ? `(${item.selectedColor})` : ''} x{item.quantity || 1}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+
+                        <td className="py-3.5 px-3">
+                          <span className="font-black text-emerald-400 text-sm block">
+                            ৳{(Number(order.grandTotal) || 0).toLocaleString()}
+                          </span>
+                          <span className="text-[10px] text-slate-500">
+                            {order.customer?.paymentMethod === 'COD' ? 'Cash on Delivery' : 'Online / bKash'}
+                          </span>
+                        </td>
+
+                        <td className="py-3.5 px-3">
+                          <select
+                            value={order.status || 'Pending'}
+                            onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border bg-[#0C1120] cursor-pointer focus:outline-none ${
+                              statusColors[currentStatus] || statusColors.pending
+                            }`}
+                          >
+                            <option value="Pending">পেন্ডিং (Pending)</option>
+                            <option value="Processing">প্রসেসিং (Processing)</option>
+                            <option value="Delivered">ডেলিভার্ড (Delivered)</option>
+                            <option value="Cancelled">বাতিল (Cancelled)</option>
+                          </select>
+                        </td>
+
+                        <td className="py-3.5 px-3 text-right">
+                          {order.customer?.phone && (
+                            <a
+                              href={`https://wa.me/88${order.customer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                                `হ্যালো ${order.customer.name}, Gift Vibes থেকে আপনার অর্ডার #${order.id} কনফার্ম করার জন্য যোগাযোগ করছি।`
+                              )}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              <span>WhatsApp</span>
+                            </a>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Touch-Friendly Card View (< md) */}
+            <div className="md:hidden space-y-3">
+              {orders.slice(0, 5).map((order) => {
+                const statusColors = {
+                  pending: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+                  processing: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+                  delivered: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+                  cancelled: 'bg-red-500/15 text-red-300 border-red-500/30',
+                };
+                const currentStatus = (order.status || 'pending').toLowerCase();
+
+                return (
+                  <div
+                    key={order.id}
+                    className="bg-slate-950/80 border border-slate-800/90 rounded-xl p-3.5 space-y-3"
+                  >
+                    {/* Top: ID, Date & Status */}
+                    <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-900">
+                      <div>
+                        <span className="font-black text-amber-400 text-xs block">#{order.id}</span>
+                        <span className="text-[10px] text-slate-500 block">{order.date}</span>
+                      </div>
+                      <select
+                        value={order.status || 'Pending'}
+                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                        className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border bg-[#0C1120] cursor-pointer focus:outline-none ${
+                          statusColors[currentStatus] || statusColors.pending
+                        }`}
+                      >
+                        <option value="Pending">পেন্ডিং</option>
+                        <option value="Processing">প্রসেসিং</option>
+                        <option value="Delivered">ডেলিভার্ড</option>
+                        <option value="Cancelled">বাতিল</option>
+                      </select>
+                    </div>
+
+                    {/* Customer Info & Call / WhatsApp Action Buttons */}
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-bold text-white text-xs">{order.customer?.name}</p>
+                          <p className="text-[11px] text-slate-400">{order.customer?.address}</p>
                         </div>
-                      </td>
+                        <div className="text-right shrink-0">
+                          <span className="font-black text-emerald-400 text-sm block">
+                            ৳{(Number(order.grandTotal) || 0).toLocaleString()}
+                          </span>
+                          <span className="text-[10px] text-slate-500 block">
+                            {order.customer?.paymentMethod === 'COD' ? 'ক্যাশ অন ডেলিভারি' : 'বিকাশ / অনলাইন'}
+                          </span>
+                        </div>
+                      </div>
 
-                      <td className="py-3.5 px-3">
-                        <span className="font-black text-emerald-400 text-sm block">
-                          ৳{(Number(order.grandTotal) || 0).toLocaleString()}
-                        </span>
-                        <span className="text-[10px] text-slate-500">
-                          {order.customer?.paymentMethod === 'COD' ? 'Cash on Delivery' : 'Online / bKash'}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-3">
-                        <select
-                          value={order.status || 'Pending'}
-                          onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border bg-[#0C1120] cursor-pointer focus:outline-none ${
-                            statusColors[currentStatus] || statusColors.pending
-                          }`}
-                        >
-                          <option value="Pending">পেন্ডিং (Pending)</option>
-                          <option value="Processing">প্রসেসিং (Processing)</option>
-                          <option value="Delivered">ডেলিভার্ড (Delivered)</option>
-                          <option value="Cancelled">বাতিল (Cancelled)</option>
-                        </select>
-                      </td>
-
-                      <td className="py-3.5 px-3 text-right">
-                        {order.customer?.phone && (
+                      {order.customer?.phone && (
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          <a
+                            href={`tel:${order.customer.phone}`}
+                            className="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <Phone className="w-3 h-3 text-amber-400" />
+                            <span>কল করুন</span>
+                          </a>
                           <a
                             href={`https://wa.me/88${order.customer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
                               `হ্যালো ${order.customer.name}, Gift Vibes থেকে আপনার অর্ডার #${order.id} কনফার্ম করার জন্য যোগাযোগ করছি।`
                             )}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold"
+                            className="py-1.5 px-2.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all"
                           >
-                            <MessageCircle className="w-3.5 h-3.5" />
+                            <MessageCircle className="w-3 h-3 text-emerald-400" />
                             <span>WhatsApp</span>
                           </a>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Items ordered summary */}
+                    <div className="pt-2 border-t border-slate-900/80 text-[11px] text-slate-400 space-y-0.5">
+                      {(order.items || []).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between">
+                          <span className="truncate max-w-[200px]">
+                            • {item.banglaName || item.name} {item.selectedColor ? `(${item.selectedColor})` : ''}
+                          </span>
+                          <span className="text-slate-300 font-bold ml-1">x{item.quantity || 1}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>
