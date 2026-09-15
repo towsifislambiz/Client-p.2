@@ -112,7 +112,7 @@ export default function AdminLoginPage() {
                 autoComplete="username"
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
-                placeholder="যেমন: Rabbani12"
+                placeholder="ইউজারনেম লিখুন"
                 className="w-full pl-10 pr-4 py-3 bg-[#070A13] border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all font-mono"
               />
             </div>
