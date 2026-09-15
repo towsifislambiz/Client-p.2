@@ -3,11 +3,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShoppingBag, CheckCircle2, ArrowRight, Sparkles, Plus, Check, Gift } from 'lucide-react';
 import { ALL_COLOR_VARIATIONS, COMBO_ITEMS_SUMMARY, COMBO_DESCRIPTION } from '../data/products';
 
+const toBengaliNumber = (num) => {
+  if (num === undefined || num === null) return '';
+  const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return String(num).replace(/\d/g, (d) => bn[Number(d)]);
+};
+
 export default function ComboUpsellModal({
   isOpen,
   onClose,
   addedProduct,
   cartItems = [],
+  products = [],
   onAddToCart,
   onProceedCheckout,
   onOpenCart,
@@ -19,31 +26,57 @@ export default function ComboUpsellModal({
   const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
   const totalPrice = cartItems.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
 
-  // Filter recommendations: other colors not matching the recently added color
-  const otherColors = ALL_COLOR_VARIATIONS.filter(
-    (c) => c.name.toLowerCase() !== (addedProduct?.selectedColor || addedProduct?.color || '').toLowerCase()
-  );
+  // Filter recommendations: other products/colors not matching recently added
+  const otherColors = (products && products.length > 0)
+    ? products
+        .filter((p) => String(p.id) !== String(addedProduct?.id) && (p.color || '').toLowerCase() !== (addedProduct?.selectedColor || addedProduct?.color || '').toLowerCase())
+        .map((p) => ({
+          id: p.id,
+          name: p.color || p.name,
+          banglaName: p.banglaName || p.name,
+          image: p.image || '/images/products/red-maroon.webp',
+          price: Number(p.price) || 1350,
+          originalPrice: Number(p.originalPrice) || 1650,
+          rawProduct: p,
+        }))
+    : ALL_COLOR_VARIATIONS.filter(
+        (c) => c.name.toLowerCase() !== (addedProduct?.selectedColor || addedProduct?.color || '').toLowerCase()
+      ).map((c) => ({
+        ...c,
+        price: 1350,
+        originalPrice: 1650,
+      }));
 
   const handleQuickAddOtherColor = (colorObj) => {
-    const newProduct = {
-      id: colorObj.id,
-      name: `Handloom Cotton Saree Combo - ${colorObj.name}`,
-      banglaName: `${colorObj.banglaName} তাঁতের শাড়ি কম্বো`,
-      tagline: 'তাঁতে বোনা সুতি শাড়ি ও সম্পূর্ণ ১১-ইন-১ প্যাকেজ',
-      category: 'Special Combo',
-      color: colorObj.name,
-      selectedColor: colorObj.name,
-      price: 1350,
-      originalPrice: 1650,
-      image: colorObj.image,
-      quantity: 1,
-      stock: 10,
-      inStock: true,
-      description: COMBO_DESCRIPTION,
-      itemsList: COMBO_ITEMS_SUMMARY,
-    };
-
-    onAddToCart(newProduct, true); // true = silent/stay in modal
+    if (colorObj.rawProduct) {
+      onAddToCart(
+        {
+          ...colorObj.rawProduct,
+          selectedColor: colorObj.rawProduct.color || colorObj.name,
+          quantity: 1,
+        },
+        true
+      );
+    } else {
+      const newProduct = {
+        id: colorObj.id,
+        name: `Handloom Cotton Saree Combo - ${colorObj.name}`,
+        banglaName: `${colorObj.banglaName} তাঁতের শাড়ি কম্বো`,
+        tagline: 'তাঁতে বোনা সুতি শাড়ি ও সম্পূর্ণ ১১-ইন-১ প্যাকেজ',
+        category: 'Special Combo',
+        color: colorObj.name,
+        selectedColor: colorObj.name,
+        price: colorObj.price || 1350,
+        originalPrice: colorObj.originalPrice || 1650,
+        image: colorObj.image,
+        quantity: 1,
+        stock: 10,
+        inStock: true,
+        description: COMBO_DESCRIPTION,
+        itemsList: COMBO_ITEMS_SUMMARY,
+      };
+      onAddToCart(newProduct, true); // true = silent/stay in modal
+    }
     setAddedComboIds((prev) => [...prev, colorObj.id]);
   };
 
@@ -139,7 +172,7 @@ export default function ComboUpsellModal({
                   অন্যান্য জনপ্রিয় কালার কালেকশন:
                 </span>
                 <span className="text-[11px] text-slate-500 font-medium">
-                  {otherColors.length}টি কালার অপশন
+                  {toBengaliNumber(otherColors.length)}টি কালার অপশন
                 </span>
               </div>
 
@@ -167,8 +200,10 @@ export default function ComboUpsellModal({
                             {color.banglaName}
                           </h5>
                           <div className="flex items-baseline gap-1 mt-0.5">
-                            <span className="text-xs font-black text-amber-700">৳১,৩৫০</span>
-                            <span className="text-[9.5px] text-slate-400 line-through">৳১,৬৫০</span>
+                            <span className="text-xs font-black text-amber-700">৳{toBengaliNumber(color.price?.toLocaleString())}</span>
+                            {color.originalPrice && (
+                              <span className="text-[9.5px] text-slate-400 line-through">৳{toBengaliNumber(color.originalPrice?.toLocaleString())}</span>
+                            )}
                           </div>
                         </div>
                       </div>

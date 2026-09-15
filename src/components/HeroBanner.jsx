@@ -3,15 +3,56 @@ import { ShoppingBag, MessageSquare, ShieldCheck, Truck, ArrowRight, Sparkles, G
 import { STORE_CONFIG as STATIC_STORE_CONFIG } from '../data/storeConfig';
 import { COMBO_ITEMS, ALL_COLOR_VARIATIONS } from '../data/products';
 
+const toBengaliNumber = (num) => {
+  if (num === undefined || num === null) return '';
+  const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return String(num).replace(/\d/g, (d) => bn[Number(d)]);
+};
+
 export default function HeroBanner({ onOrderNow, products, heroContent, storeSettings }) {
   const STORE_CONFIG = storeSettings || STATIC_STORE_CONFIG;
-  const badge = heroContent?.badgeText || 'প্রিয় মানুষের মুখে হাসি ফোটান ✨';
+  const badge = heroContent?.badge || heroContent?.badgeText || '✨ সম্পূর্ণ ১১-ইন-১ লাক্সারি গিফট কালেকশন';
   const headline1 = heroContent?.headlineMain || 'তাঁতে বোনা সুতির শাড়ি';
   const headline2 = heroContent?.headlineSub || '১১-ইন-১ গিফট কম্বো';
   const cta = heroContent?.ctaText || 'অর্ডার করতে চাই';
   const ctaSub = heroContent?.ctaSubText || 'কালার সিলেক্ট করে সরাসরি অর্ডার করুন';
 
-  const [selectedColorObj, setSelectedColorObj] = useState(ALL_COLOR_VARIATIONS[0]);
+  // Live color variations from synced products or static fallback
+  const colorItems = (products && products.length > 0)
+    ? products.map((p) => ({
+        id: p.id,
+        name: p.color || p.name,
+        banglaName: p.banglaName || p.name,
+        image: p.image || '/images/products/red-maroon.webp',
+        price: p.price || 1350,
+        originalPrice: p.originalPrice || 1650,
+      }))
+    : ALL_COLOR_VARIATIONS;
+
+  const [selectedColorObj, setSelectedColorObj] = useState(colorItems[0]);
+  const [activeImage, setActiveImage] = useState(null);
+
+  React.useEffect(() => {
+    setActiveImage(null);
+  }, [heroContent?.bannerImage]);
+
+  React.useEffect(() => {
+    if (colorItems && colorItems.length > 0) {
+      setSelectedColorObj((prev) => {
+        const found = colorItems.find((c) => String(c.id) === String(prev?.id));
+        return found || colorItems[0];
+      });
+    }
+  }, [products]);
+
+  const displayImage = activeImage || heroContent?.bannerImage || selectedColorObj?.image || "/images/products/red-maroon.webp";
+  const displayCardBadge = heroContent?.bannerCardBadge || '⭐ টপ সেলিং গিফট কম্বো';
+  const displayCardTitle = heroContent?.bannerCardTitle || (selectedColorObj?.name ? `তাঁতে বোনা সুতির শাড়ি কম্বো (${selectedColorObj.name})` : 'তাঁতে বোনা সুতির শাড়ি কম্বো');
+
+  const currentPrice = selectedColorObj?.price || 1350;
+  const currentOrigPrice = selectedColorObj?.originalPrice || 1650;
+  const currentDiscount = currentOrigPrice > currentPrice ? currentOrigPrice - currentPrice : 300;
+  const discountPercent = currentOrigPrice > currentPrice ? Math.round(((currentOrigPrice - currentPrice) / currentOrigPrice) * 100) : 18;
 
   const handleScrollToProducts = () => {
     const el = document.getElementById('products-section');
@@ -21,7 +62,7 @@ export default function HeroBanner({ onOrderNow, products, heroContent, storeSet
   const handleOrder = () => {
     if (onOrderNow) {
       const match = products?.find(
-        (p) => p.color?.toLowerCase() === selectedColorObj.name.toLowerCase()
+        (p) => String(p.id) === String(selectedColorObj.id) || p.color?.toLowerCase() === selectedColorObj.name?.toLowerCase()
       ) || products?.[0];
       onOrderNow(match || { ...products?.[0], color: selectedColorObj.name, image: selectedColorObj.image });
     } else {
@@ -63,8 +104,8 @@ export default function HeroBanner({ onOrderNow, products, heroContent, storeSet
           className="relative rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-500/40 bg-slate-950 cursor-pointer group"
         >
           <img
-            src={selectedColorObj.image}
-            alt={selectedColorObj.banglaName}
+            src={displayImage}
+            alt={displayCardTitle}
             className="w-full h-[310px] sm:h-[360px] object-cover transition-transform duration-500 group-hover:scale-105"
           />
           
@@ -72,20 +113,20 @@ export default function HeroBanner({ onOrderNow, products, heroContent, storeSet
           <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none">
             <span className="bg-rose-600/95 text-white text-[10.5px] font-extrabold px-2.5 py-1 rounded-full shadow-lg backdrop-blur-xs flex items-center gap-1">
               <Flame className="w-3.5 h-3.5 fill-amber-300 stroke-none" />
-              <span>৩০০৳ ছাড়</span>
+              <span>{toBengaliNumber(currentDiscount)}৳ ছাড়</span>
             </span>
             <span className="bg-amber-400 text-slate-950 text-[10.5px] font-black px-2.5 py-1 rounded-full shadow-lg">
-              ✨ ১১-ইন-১ কম্বো
+              {displayCardBadge}
             </span>
           </div>
 
           {/* Color Indicator Bar on Bottom of Image */}
           <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between bg-slate-950/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
             <span className="text-xs font-bold text-amber-300 truncate">
-              কালার: {selectedColorObj.banglaName}
+              {heroContent?.bannerCardTitle || `কালার: ${selectedColorObj.banglaName || selectedColorObj.name}`}
             </span>
             <span className="text-[10px] text-slate-300 font-medium shrink-0">
-              (১১টি কালার অ্যাভেইলেবল)
+              ({toBengaliNumber(colorItems.length)}টি কালার অ্যাভেইলেবল)
             </span>
           </div>
         </div>
@@ -97,16 +138,16 @@ export default function HeroBanner({ onOrderNow, products, heroContent, storeSet
             <span className="text-amber-400 font-semibold">{selectedColorObj.name}</span>
           </div>
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-            {ALL_COLOR_VARIATIONS.map((c) => (
+            {colorItems.map((c) => (
               <button
                 key={c.id}
-                onClick={() => setSelectedColorObj(c)}
+                onClick={() => { setSelectedColorObj(c); setActiveImage(c.image); }}
                 className={`relative rounded-lg overflow-hidden border-2 transition-all shrink-0 w-10 h-10 cursor-pointer ${
-                  selectedColorObj.id === c.id
+                  String(selectedColorObj.id) === String(c.id)
                     ? 'border-amber-400 ring-2 ring-amber-400/60 scale-105'
                     : 'border-slate-700 opacity-60 hover:opacity-100'
                 }`}
-                title={c.banglaName}
+                title={c.banglaName || c.name}
               >
                 <img src={c.image} alt={c.name} className="w-full h-full object-cover" />
               </button>
@@ -118,10 +159,12 @@ export default function HeroBanner({ onOrderNow, products, heroContent, storeSet
         <div className="bg-slate-800/90 border border-amber-500/30 rounded-2xl p-3 flex items-center justify-between gap-2 shadow-lg">
           <div>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-amber-400">৳১,৩৫০</span>
-              <span className="text-xs text-slate-400 line-through">৳১,৬৫০</span>
+              <span className="text-2xl font-black text-amber-400">৳{toBengaliNumber(currentPrice.toLocaleString())}</span>
+              {currentOrigPrice > currentPrice && (
+                <span className="text-xs text-slate-400 line-through">৳{toBengaliNumber(currentOrigPrice.toLocaleString())}</span>
+              )}
               <span className="text-[10px] font-extrabold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded border border-rose-500/30">
-                ১৮% ছাড়
+                {toBengaliNumber(discountPercent)}% ছাড়
               </span>
             </div>
             <p className="text-[10.5px] text-emerald-400 font-medium mt-0.5 flex items-center gap-1">
@@ -249,8 +292,10 @@ export default function HeroBanner({ onOrderNow, products, heroContent, storeSet
 
               <div className="text-right shrink-0">
                 <div className="flex items-baseline gap-2 justify-end">
-                  <span className="text-2xl font-black text-amber-400">৳১,৩৫০</span>
-                  <span className="text-xs text-slate-400 line-through">৳১,৬৫০</span>
+                  <span className="text-2xl font-black text-amber-400">৳{toBengaliNumber(currentPrice.toLocaleString())}</span>
+                  {currentOrigPrice > currentPrice && (
+                    <span className="text-xs text-slate-400 line-through">৳{toBengaliNumber(currentOrigPrice.toLocaleString())}</span>
+                  )}
                 </div>
                 <span className="text-[10px] text-emerald-400 font-semibold flex items-center justify-end gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -315,22 +360,24 @@ export default function HeroBanner({ onOrderNow, products, heroContent, storeSet
             className="relative mx-auto max-w-sm rounded-3xl overflow-hidden shadow-2xl border-4 border-amber-500/40 group cursor-pointer"
           >
             <img
-              src={selectedColorObj.image || "/images/products/red-maroon.webp"}
-              alt="তাঁতে বোনা সুতির শাড়ি কম্বো"
+              src={displayImage}
+              alt={displayCardTitle}
               className="w-full h-[430px] object-cover group-hover:scale-105 transition-transform duration-700"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent flex flex-col justify-end p-6">
               <span className="text-xs font-bold text-amber-300 bg-amber-500/20 border border-amber-500/30 px-3 py-1 rounded-full w-fit mb-2">
-                ⭐ টপ সেলিং গিফট কম্বো
+                {displayCardBadge}
               </span>
               <h3 className="text-xl font-bold text-white mb-1">
-                তাঁতে বোনা সুতির শাড়ি কম্বো ({selectedColorObj.name})
+                {displayCardTitle}
               </h3>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-amber-400">৳১,৩৫০</span>
-                <span className="text-sm font-semibold text-slate-400 line-through">৳১,৬৫০</span>
+                <span className="text-2xl font-black text-amber-400">৳{toBengaliNumber(currentPrice.toLocaleString())}</span>
+                {currentOrigPrice > currentPrice && (
+                  <span className="text-sm font-semibold text-slate-400 line-through">৳{toBengaliNumber(currentOrigPrice.toLocaleString())}</span>
+                )}
                 <span className="text-xs font-bold text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/30">
-                  ৩০০/- ছাড়
+                  {toBengaliNumber(currentDiscount)}/- ছাড়
                 </span>
               </div>
             </div>

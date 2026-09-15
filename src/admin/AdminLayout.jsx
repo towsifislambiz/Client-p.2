@@ -16,20 +16,42 @@ import {
   Clock,
 } from 'lucide-react';
 
-const navItems = [
-  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'ড্যাশবোর্ড', badge: null },
-  { to: '/admin/products', icon: Package, label: 'পণ্য ও লাইভ স্টক', badge: '১১' },
-  { to: '/admin/orders', icon: ShoppingBag, label: 'অর্ডার ট্র্যাকার', badge: 'লাইভ' },
-  { to: '/admin/hero', icon: Sparkles, label: 'হিরো ব্যানার CMS', badge: null },
-  { to: '/admin/settings', icon: Settings, label: 'স্টোর ও ডেলিভারি', badge: null },
-  { to: '/admin/security', icon: Shield, label: 'সিকিউরিটি', badge: null },
-];
+const toBengaliNumber = (num) => {
+  const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return String(num).replace(/\d/g, (d) => bn[Number(d)]);
+};
 
 export default function AdminLayout() {
   const { admin, loading, logout } = useAdminAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState('এখনই');
+  const [productCount, setProductCount] = useState(12);
+
+  const fetchCount = async () => {
+    try {
+      const res = await fetch('/api/site-data');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.products)) setProductCount(data.products.length);
+      }
+    } catch (_) {}
+  };
+
+  useEffect(() => {
+    fetchCount();
+    const interval = setInterval(fetchCount, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const navItems = [
+    { to: '/admin/dashboard', icon: LayoutDashboard, label: 'ড্যাশবোর্ড', badge: null },
+    { to: '/admin/products', icon: Package, label: 'পণ্য ও লাইভ স্টক', badge: toBengaliNumber(productCount) },
+    { to: '/admin/orders', icon: ShoppingBag, label: 'অর্ডার ট্র্যাকার', badge: 'লাইভ' },
+    { to: '/admin/hero', icon: Sparkles, label: 'হিরো ব্যানার CMS', badge: null },
+    { to: '/admin/settings', icon: Settings, label: 'স্টোর ও ডেলিভারি', badge: null },
+    { to: '/admin/security', icon: Shield, label: 'সিকিউরিটি', badge: null },
+  ];
 
   useEffect(() => {
     const timer = setInterval(() => {

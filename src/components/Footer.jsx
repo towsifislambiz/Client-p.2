@@ -14,7 +14,7 @@ export default function Footer({ storeSettings }) {
           <div className="flex items-center justify-start gap-3 bg-slate-800/60 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800">
             <Truck className="w-7 h-7 sm:w-8 sm:h-8 text-amber-500 shrink-0" />
             <div className="text-left">
-              <h4 className="font-bold text-xs sm:text-sm text-white">১-৩ দিনে এক্সপ্রেস ডেলিভারি</h4>
+              <h4 className="font-bold text-xs sm:text-sm text-white">{STORE_CONFIG.deliveryTime || '১-৩ দিনে'} এক্সপ্রেস ডেলিভারি</h4>
               <p className="text-[11px] sm:text-xs text-slate-400 font-mono">সারাদেশে হোম সার্ভিস সুবিধা</p>
             </div>
           </div>
@@ -43,7 +43,7 @@ export default function Footer({ storeSettings }) {
           <div className="space-y-3">
             <h3 className="text-lg font-black text-white flex items-center gap-2">
               <img
-                src={STORE_CONFIG.logoIcon}
+                src={STORE_CONFIG.logoIcon || STORE_CONFIG.logo || '/images/logo-icon.webp'}
                 alt={STORE_CONFIG.storeName}
                 className="w-10 h-10 rounded-xl object-cover bg-black p-0.5 border border-amber-400/40"
               />

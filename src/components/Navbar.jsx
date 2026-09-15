@@ -3,8 +3,15 @@ import { Link } from 'react-router-dom';
 import { ShoppingBag, Search, Phone, MessageSquare, ShieldCheck, Sparkles, User, Settings } from 'lucide-react';
 import { STORE_CONFIG as STATIC_STORE_CONFIG } from '../data/storeConfig';
 
-export default function Navbar({ cartCount, onOpenCart, onOpenAdmin, searchQuery, setSearchQuery, storeSettings }) {
+const toBengaliNumber = (num) => {
+  if (num === undefined || num === null) return '';
+  const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return String(num).replace(/\d/g, (d) => bn[Number(d)]);
+};
+
+export default function Navbar({ cartCount, onOpenCart, onOpenAdmin, searchQuery, setSearchQuery, storeSettings, products }) {
   const STORE_CONFIG = storeSettings || STATIC_STORE_CONFIG;
+  const displayPrice = products && products.length > 0 && products[0].price ? products[0].price : 1350;
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs font-sans">
       
@@ -13,7 +20,7 @@ export default function Navbar({ cartCount, onOpenCart, onOpenAdmin, searchQuery
         <div className="max-w-7xl mx-auto flex items-center justify-between w-full">
           <span className="flex items-center gap-1.5 mx-auto sm:mx-0 truncate sm:overflow-visible">
             <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-pulse text-amber-200 shrink-0" />
-            <span className="truncate sm:overflow-visible">✨ সম্পূর্ণ ১১-ইন-১ তাঁতের শাড়ি কম্বো মাত্র ১৩৫০/- টাকা • ক্যাশ অন ডেলিভারি</span>
+            <span className="truncate sm:overflow-visible">✨ সম্পূর্ণ ১১-ইন-১ তাঁতের শাড়ি কম্বো মাত্র {toBengaliNumber(displayPrice)}/- টাকা • ক্যাশ অন ডেলিভারি</span>
           </span>
 
           <div className="hidden sm:flex items-center gap-4 text-[11px]">
@@ -34,7 +41,7 @@ export default function Navbar({ cartCount, onOpenCart, onOpenAdmin, searchQuery
         <div className="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none shrink-0">
           <div className="relative">
             <img
-              src={STORE_CONFIG.logoIcon}
+              src={STORE_CONFIG.logoIcon || STORE_CONFIG.logo || '/images/logo-icon.webp'}
               alt={STORE_CONFIG.storeName}
               className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl object-cover shadow-md border-2 border-amber-500/50 bg-black p-0.5"
             />

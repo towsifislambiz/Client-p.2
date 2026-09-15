@@ -4,7 +4,13 @@ import { X, ShoppingBag, MessageSquare, Star, Truck, ShieldCheck, Check, Sparkle
 import { STORE_CONFIG } from '../data/storeConfig';
 import { ALL_COLOR_VARIATIONS, COMBO_ITEMS } from '../data/products';
 
-export default function ProductModal({ product, onClose, onAddToCart, onBuyWhatsApp }) {
+const toBengaliNumber = (num) => {
+  if (num === undefined || num === null) return '';
+  const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return String(num).replace(/\d/g, (d) => bn[Number(d)]);
+};
+
+export default function ProductModal({ product, onClose, onAddToCart, onBuyWhatsApp, storeSettings, products }) {
   const [selectedColor, setSelectedColor] = useState(product?.color || 'Red + Maroon');
   const [activeImage, setActiveImage] = useState(product?.image || '/images/products/red-maroon.webp');
   const [quantity, setQuantity] = useState(1);
@@ -12,7 +18,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyWhats
   useEffect(() => {
     if (product) {
       setSelectedColor(product.color || 'Red + Maroon');
-      setActiveImage(product.image);
+      setActiveImage(product.image || '/images/products/red-maroon.webp');
       setQuantity(1);
     }
   }, [product]);
@@ -23,6 +29,21 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyWhats
   const isSoldOut = stock <= 0 || product.inStock === false;
   const isLowStock = !isSoldOut && stock <= 3;
 
+  const currentPrice = Number(product.price) || 1350;
+  const currentOrigPrice = Number(product.originalPrice) || 1650;
+  const currentDiscount = currentOrigPrice > currentPrice ? currentOrigPrice - currentPrice : 300;
+  const discountPercent = currentOrigPrice > currentPrice ? Math.round(((currentOrigPrice - currentPrice) / currentOrigPrice) * 100) : 18;
+
+  const colorOptions = (products && products.length > 0)
+    ? products.map((p) => ({
+        id: p.id,
+        name: p.color || p.name,
+        banglaName: p.banglaName || p.name,
+        image: p.image || '/images/products/red-maroon.webp',
+        price: p.price,
+      }))
+    : ALL_COLOR_VARIATIONS;
+
   const handleColorChange = (colorObj) => {
     setSelectedColor(colorObj.name);
     setActiveImage(colorObj.image);
@@ -32,7 +53,8 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyWhats
     if (isSoldOut) return;
     onAddToCart({
       ...product,
-      name: `Premium Saree Combo (${selectedColor})`,
+      name: product.name,
+      banglaName: product.banglaName || product.name,
       selectedColor,
       image: activeImage,
       quantity,
@@ -45,7 +67,8 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyWhats
     if (isSoldOut) return;
     onBuyWhatsApp({
       ...product,
-      name: `Premium Saree Combo (${selectedColor})`,
+      name: product.name,
+      banglaName: product.banglaName || product.name,
       selectedColor,
       image: activeImage,
       quantity,
@@ -97,7 +120,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyWhats
                 ) : (
                   <>
                     <span className="absolute top-3 left-3 bg-rose-600 text-white font-bold text-[11px] px-2.5 py-1 rounded-lg shadow-md">
-                      ১৮% ছাড় (৩০০৳ সেভ)
+                      {toBengaliNumber(discountPercent)}% ছাড় ({toBengaliNumber(currentDiscount)}৳ সেভ)
                     </span>
                     <span className="absolute bottom-3 left-3 bg-slate-950/85 text-amber-300 text-[11px] font-bold px-3 py-1 rounded-full backdrop-blur-xs border border-amber-400/20 truncate max-w-[85%]">
                       কালার: {selectedColor}
@@ -109,10 +132,10 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyWhats
               {/* Color Swatch Thumbnails */}
               <div>
                 <span className="text-[11px] font-bold text-slate-700 block mb-1.5">
-                  🎨 কালার ভ্যারিয়েশন বেছে নিন (১১টি অপশন):
+                  🎨 কালার ভ্যারিয়েশন ({toBengaliNumber(colorOptions.length)}টি অপশন):
                 </span>
                 <div className="grid grid-cols-6 gap-1.5 p-1.5 bg-slate-50 rounded-xl border border-slate-200">
-                  {ALL_COLOR_VARIATIONS.map((c) => (
+                  {colorOptions.map((c) => (
                     <button
                       key={c.id}
                       onClick={() => handleColorChange(c)}
@@ -156,13 +179,15 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyWhats
               <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-baseline gap-2">
                   <span className={`text-2xl sm:text-3xl font-black ${isSoldOut ? 'text-slate-400' : 'text-slate-900'}`}>
-                    ৳১,৩৫০
+                    ৳{toBengaliNumber(currentPrice.toLocaleString())}
                   </span>
-                  <span className="text-xs sm:text-sm font-semibold text-slate-400 line-through">
-                    ৳১,৬৫০
-                  </span>
+                  {currentOrigPrice > currentPrice && (
+                    <span className="text-xs sm:text-sm font-semibold text-slate-400 line-through">
+                      ৳{toBengaliNumber(currentOrigPrice.toLocaleString())}
+                    </span>
+                  )}
                   <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md whitespace-nowrap">
-                    ৩০০/- ছাড়
+                    {toBengaliNumber(currentDiscount)}/- ছাড়
                   </span>
                 </div>
 
@@ -273,7 +298,7 @@ export default function ProductModal({ product, onClose, onAddToCart, onBuyWhats
               <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
                 <span className="flex items-center gap-1">
                   <Truck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  ঢাকা ৳৮০, বাইরে ৳১৩০
+                  ঢাকা ৳{toBengaliNumber(storeSettings?.deliveryCharges?.insideDhaka ?? 80)}, বাইরে ৳{toBengaliNumber(storeSettings?.deliveryCharges?.outsideDhaka ?? 130)}
                 </span>
                 <span className="flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />

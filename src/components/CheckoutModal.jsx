@@ -4,6 +4,12 @@ import { X, CheckCircle2, ShieldCheck, Truck, Send, CreditCard, MessageSquare } 
 import { STORE_CONFIG as STATIC_STORE_CONFIG } from '../data/storeConfig';
 import { trackPurchase } from '../utils/pixel';
 
+const toBengaliNumber = (num) => {
+  if (num === undefined || num === null) return '';
+  const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return String(num).replace(/\d/g, (d) => bn[Number(d)]);
+};
+
 export default function CheckoutModal({ isOpen, onClose, cartItems, onCompleteOrder, storeSettings }) {
   const STORE_CONFIG = storeSettings || STATIC_STORE_CONFIG;
 
@@ -21,7 +27,9 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onCompleteOr
   if (!isOpen) return null;
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
-  const deliveryFee = customer.district === 'insideDhaka' ? STORE_CONFIG.deliveryCharges.insideDhaka : STORE_CONFIG.deliveryCharges.outsideDhaka;
+  const insideFee = Number(STORE_CONFIG.deliveryCharges?.insideDhaka ?? 80);
+  const outsideFee = Number(STORE_CONFIG.deliveryCharges?.outsideDhaka ?? 130);
+  const deliveryFee = customer.district === 'insideDhaka' ? insideFee : outsideFee;
   const grandTotal = subtotal + deliveryFee;
 
 
@@ -43,6 +51,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onCompleteOr
     // ─── POST to backend API (server-side price verification + MongoDB save) ─
     try {
       const apiPayload = {
+        id: orderData.id,
         customer: {
           name: customer.name,
           phone: customer.phone,
@@ -54,12 +63,15 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onCompleteOr
         items: cartItems.map((item) => ({
           productId: item._id || item.id || null,
           name: item.name,
-          banglaName: item.banglaName || '',
+          banglaName: item.banglaName || item.name || '',
           selectedColor: item.selectedColor || item.color || '',
           price: item.price,
           quantity: item.quantity || 1,
           image: item.image || '',
         })),
+        subtotal,
+        deliveryFee,
+        grandTotal,
       };
 
       const response = await fetch('/api/orders', {
@@ -68,8 +80,8 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onCompleteOr
         body: JSON.stringify(apiPayload),
       });
       const result = await response.json();
-      if (result.success) {
-        orderData.id = result.order.orderId || orderData.id;
+      if (result.success && result.order) {
+        orderData.id = result.order.id || result.order.orderId || orderData.id;
         orderData.grandTotal = result.order.grandTotal || orderData.grandTotal;
         orderData.deliveryFee = result.order.deliveryFee || orderData.deliveryFee;
       }
@@ -187,8 +199,12 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onCompleteOr
                       onChange={(e) => setCustomer({ ...customer, district: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-orange-500 font-mono font-bold"
                     >
-                      <option value="insideDhaka">ঢাকার ভেতরে (কুরিয়ার ৳৮০)</option>
-                      <option value="outsideDhaka">ঢাকার বাইরে (কুরিয়ার ৳১৩০)</option>
+                      <option value="insideDhaka">
+                        ঢাকার ভেতরে (কুরিয়ার ৳{toBengaliNumber(insideFee)})
+                      </option>
+                      <option value="outsideDhaka">
+                        ঢাকার বাইরে (কুরিয়ার ৳{toBengaliNumber(outsideFee)})
+                      </option>
                     </select>
                   </div>
 
@@ -252,10 +268,15 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onCompleteOr
                   {/* TrxID Input Box if bKash selected */}
                   {customer.paymentMethod === 'BKASH' && (
                     <div className="mt-3 p-3 bg-pink-50 border border-pink-200 rounded-xl space-y-2 text-xs font-mono">
-                      <p className="text-[11px] text-pink-900 font-semibold">
-                        📲 আমাদের বিকাশ/নগদ নম্বরে <b>৳{grandTotal.toLocaleString()} BDT</b> সেন্ড মানি করুন: <br />
-                        <span className="text-pink-700 font-bold">{STORE_CONFIG.bkashNumber}</span>
-                      </p>
+                      <div className="text-[11px] text-pink-900 font-semibold space-y-1">
+                        <p>📲 আমাদের নম্বরে <b>৳{toBengaliNumber(grandTotal.toLocaleString())} BDT</b> সেন্ড মানি করুন:</p>
+                        <div className="bg-white/90 p-2 rounded-lg border border-pink-200 space-y-0.5">
+                          <p><span className="font-bold text-pink-700">বিকাশ:</span> {STORE_CONFIG.bkashNumber}</p>
+                          {STORE_CONFIG.nagadNumber && (
+                            <p><span className="font-bold text-orange-600">নগদ:</span> {STORE_CONFIG.nagadNumber}</p>
+                          )}
+                        </div>
+                      </div>
                       <input
                         type="text"
                         placeholder="বিকাশ / নগদ Transaction ID (TrxID) লিখুন"
@@ -272,15 +293,15 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onCompleteOr
                 <div className="bg-slate-100 p-4 rounded-xl space-y-1.5 font-mono text-xs">
                   <div className="flex items-center justify-between text-slate-600">
                     <span>প্রোডাক্ট সাবটোটাল:</span>
-                    <span>৳{subtotal.toLocaleString()} BDT</span>
+                    <span>৳{toBengaliNumber(subtotal.toLocaleString())} BDT</span>
                   </div>
                   <div className="flex items-center justify-between text-slate-600">
                     <span>কুরিয়ার হোম ডেলিভারি ফি:</span>
-                    <span>৳{deliveryFee} BDT</span>
+                    <span>৳{toBengaliNumber(deliveryFee)} BDT</span>
                   </div>
                   <div className="flex items-center justify-between font-extrabold text-sm text-slate-900 pt-2 border-t border-slate-200">
                     <span>সর্বমোট (Grand Total):</span>
-                    <span className="text-orange-600">৳{grandTotal.toLocaleString()} BDT</span>
+                    <span className="text-orange-600">৳{toBengaliNumber(grandTotal.toLocaleString())} BDT</span>
                   </div>
                 </div>
 

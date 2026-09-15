@@ -6,6 +6,9 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const sharp = require('sharp');
+const fs = require('fs');
 
 const storage = require('./services/storage');
 const { protect, JWT_SECRET } = require('./middleware/auth');
@@ -60,9 +63,9 @@ app.get(['/api/site-data', '/site-data'], (req, res) => {
 });
 
 // 2. POST /api/site-data/update — Instant update from Admin Panel
-app.post(['/api/site-data/update', '/site-data/update'], protect, (req, res) => {
+app.post(['/api/site-data/update', '/site-data/update'], protect, async (req, res) => {
   const updates = req.body;
-  const result = storage.updateSiteData(updates);
+  const result = await storage.updateSiteData(updates);
   res.json(result);
 });
 
@@ -82,15 +85,65 @@ app.get(['/api/products', '/products'], (req, res) => {
   res.json({ success: true, products: data.products });
 });
 
-app.post(['/api/products', '/products'], protect, (req, res) => {
+app.post(['/api/products', '/products'], protect, async (req, res) => {
   const productData = req.body;
-  const result = storage.saveProduct(productData);
+  const result = await storage.saveProduct(productData);
   res.json(result);
 });
 
 app.delete(['/api/products/:id', '/products/:id'], protect, (req, res) => {
   const result = storage.deleteProduct(req.params.id);
   res.json(result);
+});
+
+// 4.5 Universal WebP Image Upload Endpoint (Any image -> WebP)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024 },
+});
+
+app.post(['/api/upload', '/upload'], protect, upload.single('image'), async (req, res) => {
+  try {
+    let buffer = null;
+    let originalName = 'uploaded';
+
+    if (req.file) {
+      buffer = req.file.buffer;
+      originalName = path.parse(req.file.originalname).name;
+    } else if (req.body && req.body.image && req.body.image.startsWith('data:image/')) {
+      const parts = req.body.image.split(';base64,');
+      buffer = Buffer.from(parts[1], 'base64');
+      if (req.body.name) originalName = req.body.name;
+    }
+
+    if (!buffer) {
+      return res.status(400).json({ success: false, message: 'ছবি প্রদান করা হয়নি।' });
+    }
+
+    const cleanSlug = originalName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'image';
+    const filename = `${cleanSlug}-${Date.now()}.webp`;
+
+    const webpBuffer = await sharp(buffer)
+      .webp({ quality: 85, effort: 4 })
+      .toBuffer();
+
+    const uploadDir = path.join(__dirname, '../public/images/products');
+    const distUploadDir = path.join(__dirname, '../dist/images/products');
+
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+    fs.writeFileSync(path.join(uploadDir, filename), webpBuffer);
+
+    if (fs.existsSync(path.dirname(distUploadDir))) {
+      if (!fs.existsSync(distUploadDir)) fs.mkdirSync(distUploadDir, { recursive: true });
+      fs.writeFileSync(path.join(distUploadDir, filename), webpBuffer);
+    }
+
+    const url = `/images/products/${filename}`;
+    res.json({ success: true, url, filename, format: 'webp' });
+  } catch (err) {
+    console.error('Upload conversion error:', err);
+    res.status(500).json({ success: false, message: 'WebP কনভার্সন ব্যর্থ হয়েছে: ' + err.message });
+  }
 });
 
 // 5. Orders API
@@ -117,6 +170,12 @@ app.patch(['/api/orders/:id/status', '/orders/:id/status'], protect, (req, res) 
     return res.status(400).json({ success: false, message: 'Status required' });
   }
   const result = storage.updateOrderStatus(req.params.id, status);
+  res.json(result);
+});
+
+// Admin Order Delete
+app.delete(['/api/orders/:id', '/orders/:id'], protect, (req, res) => {
+  const result = storage.deleteOrder(req.params.id);
   res.json(result);
 });
 
@@ -208,7 +267,7 @@ app.use((req, res) => {
 
 // ─── Start Server (standalone / local mode) ───────────────────────────────────
 if (!process.env.VERCEL) {
-  const PORT = process.env.PORT || 5000;
+  const PORT = process.env.PORT || 5001;
   app.listen(PORT, () => {
     console.log(`🚀 Real-time Site-Data Server running on http://localhost:${PORT}`);
     console.log(`⚡ API: http://localhost:${PORT}/api/site-data`);

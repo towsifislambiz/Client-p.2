@@ -11,6 +11,8 @@ import {
   Building,
   Sparkles,
   RefreshCw,
+  UploadCloud,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 export default function AdminSettings() {
@@ -67,6 +69,38 @@ export default function AdminSettings() {
       },
     }));
     setSavedSuccess(false);
+  };
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 600;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) {
+            height = Math.round((height * MAX) / width);
+            width = MAX;
+          } else {
+            width = Math.round((width * MAX) / height);
+            height = MAX;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const webpData = canvas.toDataURL('image/webp', 0.9);
+        setSettings((prev) => ({ ...prev, logo: webpData, logoIcon: webpData }));
+        setSavedSuccess(false);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSave = async (e) => {
@@ -156,6 +190,39 @@ export default function AdminSettings() {
                 onChange={(e) => handleChange('address', e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
               />
+            </div>
+          </div>
+
+          {/* Store Logo (Automatic WebP) */}
+          <div className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-5 sm:p-6 space-y-4 shadow-lg">
+            <h3 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+              <ImageIcon className="w-4 h-4 text-amber-400" />
+              <span>স্টোর লোগো (স্বয়ংক্রিয় WebP রূপান্তর)</span>
+            </h3>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="w-20 h-20 rounded-2xl bg-slate-900 border border-slate-700 flex items-center justify-center p-2 shrink-0">
+                <img
+                  src={settings.logo || '/images/logo.webp'}
+                  alt="Logo Preview"
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl font-bold text-xs cursor-pointer transition-all">
+                  <UploadCloud className="w-4 h-4" />
+                  <span>নতুন লোগো আপলোড করুন</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                  />
+                </label>
+                <p className="text-[11px] text-slate-400">
+                  যে কোনো ফরম্যাটের ছবি (PNG, JPG, JPEG) সিলেক্ট করলে তা স্বয়ংক্রিয়ভাবে হাই-কোয়ালিটি WebP তে রূপান্তরিত হয়ে ওয়েবসাইটে সেট হবে।
+                </p>
+              </div>
             </div>
           </div>
 

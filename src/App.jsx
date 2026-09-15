@@ -8,7 +8,6 @@ import ProductModal from './components/ProductModal';
 import CustomerReviews from './components/CustomerReviews';
 import CartDrawer from './components/CartDrawer';
 import CheckoutModal from './components/CheckoutModal';
-import AdminPanelModal from './components/AdminPanelModal';
 import ComboUpsellModal from './components/ComboUpsellModal';
 import LiveSalesNotification from './components/LiveSalesNotification';
 import FloatingWhatsappButton from './components/FloatingWhatsappButton';
@@ -19,10 +18,40 @@ import { STORE_CONFIG as STATIC_STORE_CONFIG } from './data/storeConfig';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { trackAddToCart, trackViewContent, trackInitiateCheckout, trackPurchase } from './utils/pixel';
 
+const toBengaliNumber = (num) => {
+  if (num === undefined || num === null) return '';
+  const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return String(num).replace(/\d/g, (d) => bn[Number(d)]);
+};
+
 export default function App() {
   // ─── Store Settings & Live Data (synced in real-time from /api/site-data) ───
-  const [storeSettings, setStoreSettings] = useState(STATIC_STORE_CONFIG);
-  const [heroContent, setHeroContent] = useState(null);
+  const [storeSettings, setStoreSettings] = useState(() => {
+    const saved = localStorage.getItem('giftvibes_store_settings_v1');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          ...STATIC_STORE_CONFIG,
+          ...parsed,
+          deliveryCharges: {
+            insideDhaka: Number(parsed.deliveryCharges?.insideDhaka ?? STATIC_STORE_CONFIG.deliveryCharges.insideDhaka),
+            outsideDhaka: Number(parsed.deliveryCharges?.outsideDhaka ?? STATIC_STORE_CONFIG.deliveryCharges.outsideDhaka),
+          },
+        };
+      } catch (e) {}
+    }
+    return STATIC_STORE_CONFIG;
+  });
+
+  const [heroContent, setHeroContent] = useState(() => {
+    const saved = localStorage.getItem('giftvibes_hero_v1');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return null;
+  });
+
   const [products, setProducts] = useState(() => {
     const saved = localStorage.getItem('giftvibes_store_products_v5');
     if (saved) {
@@ -47,17 +76,20 @@ export default function App() {
           lastUpdated = data.updatedAt;
 
           if (data.storeSettings) {
-            setStoreSettings({
+            const mergedSettings = {
               ...STATIC_STORE_CONFIG,
               ...data.storeSettings,
               deliveryCharges: {
-                insideDhaka: data.storeSettings.deliveryCharges?.insideDhaka ?? STATIC_STORE_CONFIG.deliveryCharges.insideDhaka,
-                outsideDhaka: data.storeSettings.deliveryCharges?.outsideDhaka ?? STATIC_STORE_CONFIG.deliveryCharges.outsideDhaka,
+                insideDhaka: Number(data.storeSettings.deliveryCharges?.insideDhaka ?? STATIC_STORE_CONFIG.deliveryCharges.insideDhaka),
+                outsideDhaka: Number(data.storeSettings.deliveryCharges?.outsideDhaka ?? STATIC_STORE_CONFIG.deliveryCharges.outsideDhaka),
               },
-            });
+            };
+            setStoreSettings(mergedSettings);
+            localStorage.setItem('giftvibes_store_settings_v1', JSON.stringify(mergedSettings));
           }
           if (data.hero) {
             setHeroContent((prev) => ({ ...prev, ...data.hero }));
+            localStorage.setItem('giftvibes_hero_v1', JSON.stringify(data.hero));
           }
           if (Array.isArray(data.products) && data.products.length > 0) {
             setProducts(data.products);
@@ -111,7 +143,6 @@ export default function App() {
   const [selectedProductModal, setSelectedProductModal] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [upsellProduct, setUpsellProduct] = useState(null);
 
   // Filter products by category and smart bilingual (Bangla + English/Banglish) search query
@@ -161,13 +192,20 @@ export default function App() {
   };
 
   // Admin Live Stock Update Function
-  const handleUpdateStock = (productId, newStock) => {
+  const handleUpdateStock = async (productId, newStock) => {
     const stockNum = Math.max(0, Number(newStock) || 0);
     setProducts((prevProducts) =>
       prevProducts.map((p) =>
         p.id === productId ? { ...p, stock: stockNum, inStock: stockNum > 0 } : p
       )
     );
+    try {
+      await fetch('/api/products/stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, stock: stockNum }),
+      });
+    } catch (e) {}
   };
 
   // Cart Handler Functions (Stock-aware & Color-aware)
@@ -280,6 +318,13 @@ export default function App() {
     localStorage.setItem('giftvibes_store_orders', JSON.stringify([waOrder, ...existingOrders]));
     window.dispatchEvent(new CustomEvent('giftvibes_new_order', { detail: waOrder }));
 
+    // Sync WhatsApp order to server & deduct server stock in real time
+    fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(waOrder),
+    }).catch(() => {});
+
     // Meta (Facebook) Pixel: Direct Buy Purchase
     trackPurchase(waOrder);
 
@@ -289,22 +334,6 @@ export default function App() {
     window.open(`https://wa.me/${storeSettings.whatsappNumber}?text=${encoded}`, '_blank');
   };
 
-  // Admin Actions with LocalStorage Persistence
-  const handleAddProduct = (newProduct) => {
-    setProducts((prev) => [newProduct, ...prev]);
-  };
-
-  const handleDeleteProduct = (productId) => {
-    setProducts((prev) => prev.filter((p) => p.id !== productId));
-  };
-
-  const handleResetProducts = () => {
-    if (window.confirm('আপনি কি সব প্রোডাক্ট ও স্টক রিসেট করতে চান?')) {
-      setProducts(INITIAL_PRODUCTS);
-      localStorage.setItem('giftvibes_store_products_v5', JSON.stringify(INITIAL_PRODUCTS));
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-orange-500 selection:text-white relative">
       
@@ -312,10 +341,10 @@ export default function App() {
       <Navbar
         cartCount={cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0)}
         onOpenCart={() => setIsCartOpen(true)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         storeSettings={storeSettings}
+        products={products}
       />
 
       {/* Main Content Area */}
@@ -336,6 +365,7 @@ export default function App() {
         <CategoryBar
           activeCategory={activeCategory}
           setActiveCategory={setActiveCategory}
+          totalCount={products.length}
         />
 
         {/* Featured Products Grid Section */}
@@ -347,7 +377,7 @@ export default function App() {
                 ✨ সম্পূর্ণ ১১-ইন-১ লাক্সারি গিফট কালেকশন
               </span>
               <h2 className="text-xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                {activeCategory === 'All' ? 'তাঁতে বোনা সুতির শাড়ি কম্বো কালেকশন (১১টি কালার)' : `${activeCategory} তাঁতের শাড়ি কম্বো`}
+                {activeCategory === 'All' ? `তাঁতে বোনা সুতির শাড়ি কম্বো কালেকশন (${toBengaliNumber(products.length)}টি কালার)` : `${activeCategory} তাঁতের শাড়ি কম্বো`}
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
                 পছন্দের কালারটি নির্বাচন করে ঘরে বসেই অর্ডার করুন। পণ্য হাতে পেয়ে চেক করে পেমেন্ট করার পূর্ণ সুবিধা!
@@ -433,6 +463,8 @@ export default function App() {
         onClose={() => setSelectedProductModal(null)}
         onAddToCart={handleAddToCart}
         onBuyWhatsApp={handleBuyWhatsApp}
+        storeSettings={storeSettings}
+        products={products}
       />
 
       <ComboUpsellModal
@@ -440,6 +472,7 @@ export default function App() {
         onClose={() => setUpsellProduct(null)}
         addedProduct={upsellProduct}
         cartItems={cartItems}
+        products={products}
         onAddToCart={handleAddToCart}
         onProceedCheckout={() => {
           setUpsellProduct(null);
@@ -473,16 +506,6 @@ export default function App() {
           setCartItems([]);
           localStorage.removeItem('giftvibes_store_cart_v1');
         }}
-      />
-
-      <AdminPanelModal
-        isOpen={isAdminOpen}
-        onClose={() => setIsAdminOpen(false)}
-        products={products}
-        onAddProduct={handleAddProduct}
-        onDeleteProduct={handleDeleteProduct}
-        onResetProducts={handleResetProducts}
-        onUpdateStock={handleUpdateStock}
       />
 
     </div>

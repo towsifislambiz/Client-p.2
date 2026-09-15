@@ -1,30 +1,113 @@
 const fs = require('fs');
 const path = require('path');
-
 const os = require('os');
+const sharp = require('sharp');
+
 const DATA_FILE = path.join(__dirname, '../data/siteData.json');
 const TMP_FILE = path.join(os.tmpdir(), 'siteData.json');
+
+const PRODUCTS_IMG_DIR = path.join(__dirname, '../../public/images/products');
+const PRODUCTS_IMG_DIST_DIR = path.join(__dirname, '../../dist/images/products');
+const IMAGES_DIR = path.join(__dirname, '../../public/images');
+const IMAGES_DIST_DIR = path.join(__dirname, '../../dist/images');
+
+// Automatic WebP Conversion Pipeline
+async function processImageToWebP(imageData, prefix = 'product') {
+  if (!imageData || typeof imageData !== 'string') return imageData;
+
+  // Case 1: Base64 data URI (from file picker or canvas conversion)
+  if (imageData.startsWith('data:image/')) {
+    try {
+      const parts = imageData.split(';base64,');
+      if (parts.length === 2) {
+        const buffer = Buffer.from(parts[1], 'base64');
+        const filename = `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}.webp`;
+
+        const isGeneral = prefix.startsWith('logo') || prefix.startsWith('hero');
+        const targetDir = isGeneral ? IMAGES_DIR : PRODUCTS_IMG_DIR;
+        const distDir = isGeneral ? IMAGES_DIST_DIR : PRODUCTS_IMG_DIST_DIR;
+
+        if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
+        const webpBuffer = await sharp(buffer)
+          .webp({ quality: 85, effort: 4 })
+          .toBuffer();
+
+        fs.writeFileSync(path.join(targetDir, filename), webpBuffer);
+
+        if (fs.existsSync(path.dirname(distDir))) {
+          if (!fs.existsSync(distDir)) fs.mkdirSync(distDir, { recursive: true });
+          fs.writeFileSync(path.join(distDir, filename), webpBuffer);
+        }
+
+        return isGeneral ? `/images/${filename}` : `/images/products/${filename}`;
+      }
+    } catch (err) {
+      console.error('Failed to convert base64 image to WebP:', err.message);
+    }
+  }
+
+  // Case 2: Local file path with non-webp extension (.png, .jpg, .jpeg)
+  const nonWebpMatch = imageData.match(/\.(png|jpe?g|gif|bmp|tiff)$/i);
+  if (nonWebpMatch) {
+    const webpUrl = imageData.replace(/\.(png|jpe?g|gif|bmp|tiff)$/i, '.webp');
+    const cleanRel = imageData.startsWith('/') ? imageData.slice(1) : imageData;
+    const publicPath = path.join(__dirname, '../../public', cleanRel);
+    const webpPublicPath = publicPath.replace(/\.(png|jpe?g|gif|bmp|tiff)$/i, '.webp');
+
+    if (fs.existsSync(webpPublicPath)) {
+      return webpUrl;
+    }
+
+    if (fs.existsSync(publicPath)) {
+      try {
+        await sharp(publicPath).webp({ quality: 85 }).toFile(webpPublicPath);
+        const distPath = path.join(__dirname, '../../dist', cleanRel).replace(/\.(png|jpe?g|gif|bmp|tiff)$/i, '.webp');
+        if (fs.existsSync(path.dirname(distPath))) {
+          fs.copyFileSync(webpPublicPath, distPath);
+        }
+        return webpUrl;
+      } catch (e) {
+        console.error('Failed converting file to webp:', e.message);
+      }
+    }
+  }
+
+  return imageData;
+}
 
 // In-memory cache for ultra-fast (sub-millisecond) reads
 let cachedData = null;
 
-// Load data from disk (tmp fallback or bundle)
+// Load data from disk (DATA_FILE is authoritative; TMP_FILE is serverless fallback)
 function loadData() {
   try {
-    // 1. Check if newer tmp copy exists (serverless persistence across warm invocations)
-    if (fs.existsSync(TMP_FILE)) {
-      const raw = fs.readFileSync(TMP_FILE, 'utf8');
-      cachedData = JSON.parse(raw);
-      return cachedData;
-    }
-    // 2. Check bundled siteData.json
+    // 1. Check primary siteData.json file
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf8');
       cachedData = JSON.parse(raw);
       return cachedData;
     }
+    // 2. Fallback to tmp copy for serverless read-only environments
+    if (fs.existsSync(TMP_FILE)) {
+      const raw = fs.readFileSync(TMP_FILE, 'utf8');
+      cachedData = JSON.parse(raw);
+      return cachedData;
+    }
   } catch (err) {
     console.error('Failed to load siteData.json:', err.message);
+  }
+
+  if (cachedData) {
+    if (!cachedData.admin || !cachedData.admin.passwordHash) {
+      cachedData.admin = {
+        username: 'Rabbani12',
+        passwordHash: '$2b$10$pjDjcSQ9fzWUBZbMEfAUFeQfP8VytPNPZ/tfxgKSEvYuKn6Tnrw62',
+        role: 'admin',
+      };
+      saveData();
+    }
+    return cachedData;
   }
 
   // Fallback initial state if file is not found
@@ -53,7 +136,7 @@ function loadData() {
     orders: [],
     admin: {
       username: 'Rabbani12',
-      passwordHash: '$2b$10$CH/YrAJzZUMaf9AkuBn27OZg50RhK0RFNOYS81FqI1QrPLrHv/2YK',
+      passwordHash: '$2b$10$pjDjcSQ9fzWUBZbMEfAUFeQfP8VytPNPZ/tfxgKSEvYuKn6Tnrw62',
       role: 'admin',
     },
   };
@@ -108,16 +191,31 @@ module.exports = {
   },
 
   // Update specific sections (storeSettings, hero, products, etc.)
-  updateSiteData(updates = {}) {
+  async updateSiteData(updates = {}) {
     if (!cachedData) loadData();
 
     if (updates.storeSettings) {
+      if (updates.storeSettings.logo) {
+        updates.storeSettings.logo = await processImageToWebP(updates.storeSettings.logo, 'logo');
+      }
+      if (updates.storeSettings.logoIcon) {
+        updates.storeSettings.logoIcon = await processImageToWebP(updates.storeSettings.logoIcon, 'logo-icon');
+      }
       cachedData.storeSettings = { ...cachedData.storeSettings, ...updates.storeSettings };
     }
     if (updates.hero) {
+      if (updates.hero.bannerImage && updates.hero.bannerImage.startsWith('data:image/')) {
+        updates.hero.bannerImage = await processImageToWebP(updates.hero.bannerImage, 'hero-banner');
+      }
       cachedData.hero = { ...cachedData.hero, ...updates.hero };
     }
     if (Array.isArray(updates.products)) {
+      for (const prod of updates.products) {
+        if (prod.image) {
+          const slug = (prod.name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) || 'item';
+          prod.image = await processImageToWebP(prod.image, `product-${slug}`);
+        }
+      }
       cachedData.products = updates.products;
     }
 
@@ -131,10 +229,10 @@ module.exports = {
     };
   },
 
-  // Quick stock update for a single product
+  // Quick stock update for a single product (Supports exact 0, increments, instant save)
   updateProductStock(productId, newStock) {
     if (!cachedData) loadData();
-    const stockNum = Math.max(0, Number(newStock) || 0);
+    const stockNum = Math.max(0, typeof newStock === 'number' ? newStock : Number(newStock) || 0);
     const prod = cachedData.products.find((p) => String(p.id) === String(productId));
     if (prod) {
       prod.stock = stockNum;
@@ -145,20 +243,81 @@ module.exports = {
     return { success: false, message: 'Product not found' };
   },
 
-  // Save or update a product
-  saveProduct(productData) {
+  // Save or update a product (Preserves all fields, WebP auto-conversion, 50-limit enforcement)
+  async saveProduct(productData) {
     if (!cachedData) loadData();
-    const id = productData.id ? Number(productData.id) || productData.id : Date.now();
+    const id = productData.id ? (typeof productData.id === 'number' ? productData.id : Number(productData.id) || productData.id) : Date.now();
     const index = cachedData.products.findIndex((p) => String(p.id) === String(id));
 
+    // Enforce 50 product package limit for new products
+    if (index === -1 && (cachedData.products || []).length >= 50) {
+      return {
+        success: false,
+        message: '⚠️ সর্বোচ্চ ৫০টি পণ্যের লিমিট পূর্ণ হয়েছে! নতুন পণ্য যোগ করতে হলে যেকোনো একটি পণ্য ডিলিট করুন।',
+      };
+    }
+
+    let finalImage = productData.image;
+    if (finalImage) {
+      const slug = (productData.name || 'product')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 30) || 'item';
+      finalImage = await processImageToWebP(finalImage, `product-${slug}`);
+    }
+
+    const existingProduct = index > -1 ? cachedData.products[index] : {};
+
+    // Robust number parsing (preserving 0)
+    const stockNum = typeof productData.stock !== 'undefined' && productData.stock !== null && productData.stock !== ''
+      ? Math.max(0, Number(productData.stock))
+      : (typeof existingProduct.stock === 'number' ? existingProduct.stock : 10);
+
+    const priceNum = typeof productData.price !== 'undefined' && productData.price !== null && productData.price !== ''
+      ? Number(productData.price)
+      : (typeof existingProduct.price === 'number' ? existingProduct.price : 1350);
+
+    const originalPriceNum = typeof productData.originalPrice !== 'undefined' && productData.originalPrice !== null && productData.originalPrice !== ''
+      ? Number(productData.originalPrice)
+      : (typeof existingProduct.originalPrice === 'number' ? existingProduct.originalPrice : 1650);
+
+    const inStockVal = typeof productData.inStock === 'boolean'
+      ? productData.inStock
+      : (productData.inStock === 'false' ? false : (productData.inStock === 'true' ? true : stockNum > 0));
+
+    // Auto-calculate discount if not explicitly provided
+    let discount = productData.discount;
+    if (!discount && originalPriceNum > priceNum) {
+      const pct = Math.round(((originalPriceNum - priceNum) / originalPriceNum) * 100);
+      discount = `${pct}% অফ`;
+    }
+
     const updatedProduct = {
+      ...existingProduct,
       ...productData,
       id,
-      inStock: Number(productData.stock || 0) > 0,
+      name: productData.name || existingProduct.name || 'Handloom Cotton Saree Combo',
+      banglaName: productData.banglaName || existingProduct.banglaName || 'তাঁতের শাড়ি কম্বো',
+      tagline: typeof productData.tagline !== 'undefined' ? productData.tagline : (existingProduct.tagline || ''),
+      price: priceNum,
+      originalPrice: originalPriceNum,
+      stock: stockNum,
+      inStock: inStockVal,
+      discount: discount || existingProduct.discount || '',
+      category: productData.category || existingProduct.category || 'Handloom',
+      color: productData.color || existingProduct.color || 'Multi',
+      colorCode: productData.colorCode || existingProduct.colorCode || '#880808',
+      description: typeof productData.description !== 'undefined' ? productData.description : (existingProduct.description || ''),
+      itemsList: typeof productData.itemsList !== 'undefined' ? productData.itemsList : (existingProduct.itemsList || ''),
+      image: finalImage || existingProduct.image || '/images/products/red-maroon.webp',
+      rating: existingProduct.rating || 5,
+      reviewsCount: existingProduct.reviewsCount || Math.floor(25 + Math.random() * 30),
+      tags: Array.isArray(productData.tags) ? productData.tags : (existingProduct.tags || ['saree', 'combo', 'gift']),
     };
 
     if (index > -1) {
-      cachedData.products[index] = { ...cachedData.products[index], ...updatedProduct };
+      cachedData.products[index] = updatedProduct;
     } else {
       cachedData.products.unshift(updatedProduct);
     }
@@ -180,9 +339,34 @@ module.exports = {
     if (!cachedData) loadData();
 
     const orderId = orderData.id || 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+
+    // Calculate subtotal from items if missing
+    const calculatedSubtotal = Array.isArray(orderData.items)
+      ? orderData.items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
+      : 0;
+    const subtotal = typeof orderData.subtotal === 'number' && orderData.subtotal > 0
+      ? orderData.subtotal
+      : calculatedSubtotal;
+
+    // Calculate delivery charge according to customer district
+    const isInsideDhaka = (orderData.customer?.district || 'insideDhaka') === 'insideDhaka';
+    const defaultDeliveryFee = isInsideDhaka
+      ? (cachedData.storeSettings?.deliveryCharges?.insideDhaka ?? 80)
+      : (cachedData.storeSettings?.deliveryCharges?.outsideDhaka ?? 130);
+    const deliveryFee = typeof orderData.deliveryFee === 'number'
+      ? orderData.deliveryFee
+      : defaultDeliveryFee;
+
+    const grandTotal = typeof orderData.grandTotal === 'number' && orderData.grandTotal > 0
+      ? orderData.grandTotal
+      : (subtotal + deliveryFee);
+
     const newOrder = {
       ...orderData,
       id: orderId,
+      subtotal,
+      deliveryFee,
+      grandTotal,
       status: orderData.status || 'Pending',
       date: orderData.date || new Date().toLocaleString('bn-BD'),
       timestamp: orderData.timestamp || Date.now(),
@@ -223,6 +407,14 @@ module.exports = {
     return { success: false, message: 'Order not found' };
   },
 
+  // Delete an order
+  deleteOrder(orderId) {
+    if (!cachedData) loadData();
+    cachedData.orders = (cachedData.orders || []).filter((o) => String(o.id) !== String(orderId));
+    saveData();
+    return { success: true, updatedAt: cachedData.updatedAt };
+  },
+
   // Get admin credentials for login
   getAdmin() {
     if (!cachedData) loadData();
@@ -254,4 +446,7 @@ module.exports = {
       productsCount: cachedData.products.length,
     };
   },
+
+  // Image processing helper
+  processImageToWebP,
 };

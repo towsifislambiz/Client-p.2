@@ -1,8 +1,8 @@
 export const STORE_CONFIG = {
   storeName: "GIFT VIBES",
   storeTagline: "Gifts That Create Memories",
-  logo: "/images/logo.png",
-  logoIcon: "/images/logo-icon.png",
+  logo: "/images/logo.webp",
+  logoIcon: "/images/logo-icon.webp",
   whatsappNumber: "8801828739540",
   phone: "01828739540",
   email: "rabbanimeheraj03@gmail.com",

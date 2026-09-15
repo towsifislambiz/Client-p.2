@@ -16,6 +16,11 @@ import {
   MessageCircle,
 } from 'lucide-react';
 
+const toBengaliNumber = (num) => {
+  const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return String(num).replace(/\d/g, (d) => bn[Number(d)]);
+};
+
 export default function AdminDashboard() {
   const { admin } = useAdminAuth();
   const [siteData, setSiteData] = useState(null);
@@ -46,20 +51,46 @@ export default function AdminDashboard() {
 
   const handleQuickStock = async (productId, currentStock, delta) => {
     const newStock = Math.max(0, currentStock + delta);
+    // Optimistic update
+    setSiteData((prev) => {
+      if (!prev || !prev.products) return prev;
+      return {
+        ...prev,
+        products: prev.products.map((p) =>
+          String(p.id) === String(productId)
+            ? { ...p, stock: newStock, inStock: newStock > 0 }
+            : p
+        ),
+      };
+    });
+
     try {
       await api.post('/products/stock', { productId, stock: newStock });
       fetchLiveSiteData();
     } catch (err) {
       alert('স্টক আপডেট ব্যর্থ: ' + err.message);
+      fetchLiveSiteData();
     }
   };
 
   const handleStatusChange = async (orderId, newStatus) => {
+    // Optimistic update
+    setSiteData((prev) => {
+      if (!prev || !prev.orders) return prev;
+      return {
+        ...prev,
+        orders: prev.orders.map((o) =>
+          String(o.id) === String(orderId) ? { ...o, status: newStatus } : o
+        ),
+      };
+    });
+
     try {
       await api.patch(`/orders/${orderId}/status`, { status: newStatus });
       fetchLiveSiteData();
     } catch (err) {
       alert('স্ট্যাটাস আপডেট ব্যর্থ: ' + err.message);
+      fetchLiveSiteData();
     }
   };
 
@@ -124,8 +155,35 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* ─── 4 Metric Cards Grid ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+      {/* ─── 5 Metric Cards Grid (including 5K Product Limit) ─── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-5">
+        {/* Total Products (5K Catalog Limit) */}
+        <div className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-5 hover:border-amber-500/40 transition-all duration-300 shadow-lg relative group">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-400">মোট পণ্য (5K প্যাকেজ)</span>
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+              <Package className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="flex items-baseline gap-1.5">
+              <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                {toBengaliNumber(products.length)}
+              </h3>
+              <span className="text-xs font-bold text-slate-400">/ ৫০টি</span>
+            </div>
+            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden border border-slate-700/50">
+              <div
+                className="h-full bg-gradient-to-r from-amber-500 to-emerald-400 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, (products.length / 50) * 100)}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-amber-400 font-semibold mt-1.5 flex items-center gap-1">
+              <span>আরও {toBengaliNumber(Math.max(0, 50 - products.length))}টি যোগ করা যাবে</span>
+            </p>
+          </div>
+        </div>
+
         {/* Total Revenue */}
         <div className="bg-[#0C1222] border border-slate-800/80 rounded-2xl p-5 hover:border-emerald-500/40 transition-all duration-300 shadow-lg relative group">
           <div className="flex items-center justify-between">

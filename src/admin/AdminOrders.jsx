@@ -12,6 +12,7 @@ import {
   MapPin,
   CreditCard,
   Calendar,
+  Trash2,
 } from 'lucide-react';
 
 export default function AdminOrders() {
@@ -41,11 +42,28 @@ export default function AdminOrders() {
   }, []);
 
   const handleStatusChange = async (orderId, newStatus) => {
+    // Instant Optimistic update
+    setOrders((prev) =>
+      prev.map((o) => (String(o.id) === String(orderId) ? { ...o, status: newStatus } : o))
+    );
     try {
       await api.patch(`/orders/${orderId}/status`, { status: newStatus });
       fetchOrders();
     } catch (err) {
       alert('স্ট্যাটাস পরিবর্তন ব্যর্থ: ' + err.message);
+      fetchOrders();
+    }
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm('আপনি কি নিশ্চিতভাবে এই অর্ডার রেকর্ডটি মুছে ফেলতে চান?')) return;
+    setOrders((prev) => prev.filter((o) => String(o.id) !== String(orderId)));
+    try {
+      await api.delete(`/orders/${orderId}`);
+      fetchOrders();
+    } catch (err) {
+      alert('অর্ডার ডিলিট ব্যর্থ: ' + err.message);
+      fetchOrders();
     }
   };
 
@@ -150,8 +168,8 @@ export default function AdminOrders() {
                     </span>
                   </div>
 
-                  {/* Status Dropdown */}
-                  <div className="flex items-center gap-3">
+                  {/* Status Dropdown & Delete Button */}
+                  <div className="flex items-center gap-2.5">
                     <span className="text-xs text-slate-400 font-semibold">স্ট্যাটাস:</span>
                     <select
                       value={order.status || 'Pending'}
@@ -163,6 +181,15 @@ export default function AdminOrders() {
                       <option value="Delivered">ডেলিভার্ড (Delivered)</option>
                       <option value="Cancelled">বাতিল (Cancelled)</option>
                     </select>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteOrder(order.id)}
+                      title="এই অর্ডার রেকর্ড মুছে ফেলুন"
+                      className="p-1.5 rounded-xl bg-slate-900 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 border border-slate-800 hover:border-rose-500/30 transition-all cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
 

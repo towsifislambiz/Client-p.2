@@ -1,6 +1,12 @@
 import React from 'react';
 import { ShoppingBag, MessageSquare, Star, Eye, Sparkles, ShieldCheck, Flame, Ban } from 'lucide-react';
 
+const toBengaliNumber = (num) => {
+  if (num === undefined || num === null) return '';
+  const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return String(num).replace(/\d/g, (d) => bn[Number(d)]);
+};
+
 export default function ProductCard({ product, onQuickView, onAddToCart, onBuyWhatsApp }) {
   const stock = typeof product.stock === 'number' ? product.stock : (product.inStock === false ? 0 : 10);
   const isSoldOut = stock <= 0 || product.inStock === false;
@@ -37,7 +43,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart, onBuyWh
           /* Normal Top Badges on Image */
           <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none z-10">
             <span className="bg-slate-950/80 text-amber-300 border border-amber-400/30 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm backdrop-blur-md flex items-center gap-1">
-              <span>🔥 ৩০০৳ ছাড়</span>
+              <span>{product.originalPrice && product.originalPrice > product.price ? `🔥 ${toBengaliNumber(product.originalPrice - product.price)}৳ ছাড়` : '🔥 বিশেষ ছাড়'}</span>
             </span>
 
             <span className="bg-amber-950/80 text-amber-200 border border-amber-400/25 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm backdrop-blur-md">
@@ -97,11 +103,11 @@ export default function ProductCard({ product, onQuickView, onAddToCart, onBuyWh
               </span>
             ) : isLowStock ? (
               <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-rose-700 bg-rose-50 border border-rose-300 px-2 py-0.5 rounded-md animate-pulse">
-                <Flame className="w-3 h-3 text-rose-600" /> দ্রুত ফুরিয়ে যাচ্ছে! মাত্র {stock}টি বাকি
+                <Flame className="w-3 h-3 text-rose-600" /> দ্রুত ফুরিয়ে যাচ্ছে! মাত্র {toBengaliNumber(stock)}টি বাকি
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> স্টকে আছে ({stock}টি রেডি)
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> স্টকে আছে ({toBengaliNumber(stock)}টি রেডি)
               </span>
             )}
           </div>
@@ -114,11 +120,11 @@ export default function ProductCard({ product, onQuickView, onAddToCart, onBuyWh
           <div className="flex items-baseline justify-between">
             <div className="flex items-baseline gap-1.5">
               <span className={`text-xl sm:text-2xl font-black ${isSoldOut ? 'text-slate-500' : 'text-slate-900'}`}>
-                ৳{product.price.toLocaleString()}
+                ৳{toBengaliNumber(product.price?.toLocaleString())}
               </span>
               {product.originalPrice && (
                 <span className="text-xs font-semibold text-slate-400 line-through">
-                  ৳{product.originalPrice.toLocaleString()}
+                  ৳{toBengaliNumber(product.originalPrice?.toLocaleString())}
                 </span>
               )}
             </div>
@@ -129,7 +135,9 @@ export default function ProductCard({ product, onQuickView, onAddToCart, onBuyWh
               </span>
             ) : (
               <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                ১৮% সেভ
+                {product.originalPrice && product.originalPrice > product.price
+                  ? `${toBengaliNumber(Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100))}% সেভ`
+                  : 'অফার'}
               </span>
             )}
           </div>

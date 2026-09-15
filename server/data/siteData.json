@@ -1,10 +1,11 @@
 {
-  "updatedAt": "2026-09-14T14:00:00.000Z",
+  "success": true,
+  "updatedAt": "2026-09-15T03:34:09.621Z",
   "storeSettings": {
     "storeName": "GIFT VIBES",
     "storeTagline": "Gifts That Create Memories - লাক্সারি শাড়ি গিফট কম্বো",
-    "logo": "/images/logo.png",
-    "logoIcon": "/images/logo-icon.png",
+    "logo": "/images/logo.webp",
+    "logoIcon": "/images/logo-icon.webp",
     "whatsappNumber": "8801828739540",
     "phone": "01828739540",
     "email": "rabbanimeheraj03@gmail.com",
@@ -13,7 +14,7 @@
     "nagadNumber": "01828739540 (Personal)",
     "deliveryCharges": {
       "insideDhaka": 80,
-      "outsideDhaka": 130
+      "outsideDhaka": 160
     },
     "deliveryTime": "১ - ৩ দিন"
   },
@@ -28,9 +29,37 @@
       "হাতে তৈরি ম্যাচিং গহনা",
       "সুবাসিত গাজরা ও হেয়ারক্লিপ",
       "প্রিমিয়াম গিফট বক্স প্যাকিং"
-    ]
+    ],
+    "bannerImage": "/images/products/red-maroon.webp",
+    "bannerCardBadge": "⭐ টপ সেলিং গিফট কম্বো",
+    "bannerCardTitle": "তাঁতে বোনা সুতির শাড়ি কম্বো"
   },
   "products": [
+    {
+      "id": 1789438501478,
+      "name": "Exclusive Dress Combo",
+      "banglaName": "এক্সক্লুসিভ জামা গিফট কম্বো",
+      "tagline": "এক্সক্লুসিভ ড্রেস ও উপহার বক্স",
+      "category": "Special Combo",
+      "color": "Red + Maroon",
+      "colorCode": "#880808",
+      "price": 2000,
+      "originalPrice": 2250,
+      "stock": 27,
+      "inStock": true,
+      "discount": "১১% অফ",
+      "image": "/images/products/product-dress-1789438501478-542.webp",
+      "rating": 5,
+      "reviewsCount": 12,
+      "description": "একটি প্রিমিয়াম কোয়ালিটির এক্সক্লুসিভ কালেকশন—প্রিয় মানুষকে উপহার দিয়ে মুখে হাসি ফোটানোর আকর্ষণীয় প্যাকেজ!",
+      "itemsList": "এক্সক্লুসিভ ড্রেস • বিশেষ উপহার বক্স",
+      "tags": [
+        "dress",
+        "jama",
+        "combo",
+        "gift"
+      ]
+    },
     {
       "id": 1,
       "name": "Handloom Cotton Saree Combo - Red + Maroon",
@@ -58,7 +87,7 @@
         "মেরুন",
         "তাঁতের শাড়ি"
       ],
-      "stock": 12,
+      "stock": 10,
       "inStock": true
     },
     {
@@ -341,7 +370,7 @@
   "orders": [],
   "admin": {
     "username": "Rabbani12",
-    "passwordHash": "$2b$10$CH/YrAJzZUMaf9AkuBn27OZg50RhK0RFNOYS81FqI1QrPLrHv/2YK",
+    "passwordHash": "$2b$10$pjDjcSQ9fzWUBZbMEfAUFeQfP8VytPNPZ/tfxgKSEvYuKn6Tnrw62",
     "role": "admin"
   }
 }

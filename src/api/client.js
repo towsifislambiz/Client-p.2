@@ -1,4 +1,4 @@
-// API base URL — uses Vite proxy (/api → http://localhost:5000/api)
+// API base URL — uses Vite proxy (/api → http://localhost:5001/api)
 export const API_BASE = '/api';
 
 // Generic fetch wrapper with auth header injection

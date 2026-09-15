@@ -100,17 +100,66 @@ export default function AdminPanelModal({ isOpen, onClose, products, onAddProduc
     }
   };
 
-  // File Upload Handler (PC File Manager / Phone Gallery)
-  const handleImageFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+  // Automatic WebP Conversion & Compression
+  const convertToWebP = (file) => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64Image = reader.result;
-        setImagePreview(base64Image);
-        setNewProd((prev) => ({ ...prev, image: base64Image }));
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height = Math.round((height * MAX_SIZE) / width);
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width = Math.round((width * MAX_SIZE) / height);
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          let dataUrl = canvas.toDataURL('image/webp', 0.85);
+          if (!dataUrl.startsWith('data:image/webp')) {
+            dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          }
+          resolve(dataUrl);
+        };
+        img.onerror = () => reject(new Error('Image failed to load'));
+        img.src = e.target.result;
       };
+      reader.onerror = () => reject(new Error('File reading failed'));
       reader.readAsDataURL(file);
+    });
+  };
+
+  // File Upload Handler (PC File Manager / Phone Gallery -> Automatic WebP)
+  const handleImageFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const webpDataUrl = await convertToWebP(file);
+        setImagePreview(webpDataUrl);
+        setNewProd((prev) => ({ ...prev, image: webpDataUrl }));
+      } catch (err) {
+        console.error('WebP conversion error:', err);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result);
+          setNewProd((prev) => ({ ...prev, image: reader.result }));
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
